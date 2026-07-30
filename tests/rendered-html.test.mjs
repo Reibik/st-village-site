@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+process.env.STATUS_PROBE_TIMEOUT_MS = "500";
+
 const workerUrl = new URL("../dist/server/index.js", import.meta.url);
 workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
 const { default: worker } = await import(workerUrl.href);
@@ -33,6 +35,17 @@ test("health endpoint reports the web process without exposing internals", async
   assert.equal(payload.status, "ok");
   assert.equal(payload.service, "st-village-web");
   assert.equal(typeof payload.timestamp, "string");
+});
+
+test("status endpoint returns a sanitized live snapshot", async () => {
+  const response = await worker.fetch(new Request("http://localhost/api/status"), env, context);
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.match(payload.status, /^(operational|degraded|outage|maintenance|unknown)$/);
+  assert.equal(Array.isArray(payload.services), true);
+  assert.equal(Array.isArray(payload.locations), true);
+  assert.equal(payload.refreshAfterSeconds, 30);
+  assert.doesNotMatch(JSON.stringify(payload), /REMNAWAVE_API_TOKEN|probeUrl|remnawaveUuid|Authorization/i);
 });
 
 test("unconfigured integrations fail honestly", async () => {

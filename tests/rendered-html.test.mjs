@@ -24,6 +24,7 @@ test("server-renders the ST VILLAGE public home page", async () => {
   assert.match(html, /Открыть личный кабинет/);
   assert.match(html, /https:\/\/cabinet\.stvillage\.ru/);
   assert.match(html, /https:\/\/t\.me\/st_village_vpn_bot/);
+  assert.match(html, /class="footer-version">v(?:<!-- -->)?0\.8\.0<\/span>/);
   assert.match(html, /src="\/brand-emblem\.png"/);
   assert.doesNotMatch(html, /_vinext\/image/);
   assert.doesNotMatch(html, /— мс/);

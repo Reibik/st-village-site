@@ -1,0 +1,1 @@
+export async function GET() { return Response.json({ status: "unavailable", dependency: "database", message: "Подключение к базе данных не настроено" }, { status: 503, headers: { "Cache-Control": "no-store" } }); }

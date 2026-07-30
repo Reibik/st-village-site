@@ -1,0 +1,6 @@
+import type { Metadata } from "next";
+import { PageHero } from "@/src/components/page-hero";
+
+export const metadata: Metadata = { title: "Новости", description: "Новости, обновления и технические уведомления ST VILLAGE." };
+
+export default function NewsPage() { return <><PageHero eyebrow="Новости" title="Обновления сервиса" text="Важные сообщения, изменения продукта и технические уведомления будут собраны здесь." /><section className="section-shell page-content"><div className="category-tabs" aria-label="Категории новостей"><span className="active">Все</span><span>Важное</span><span>Обновления</span><span>Новости</span><span>Технические работы</span></div><div className="empty-state"><div className="empty-symbol">◫</div><h2>Публикаций пока нет</h2><p>Новости появятся после подключения редакционного модуля. Мы не создаём вымышленные обновления или даты.</p></div><style>{`.category-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px}.category-tabs span{padding:9px 14px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:12px}.category-tabs .active{background:var(--accent-soft);border-color:rgba(56,189,248,.24);color:var(--accent)}`}</style></section></>; }

@@ -1,0 +1,8 @@
+import type { Metadata } from "next";
+import { PageHero } from "@/src/components/page-hero";
+import { locations } from "@/src/config/content";
+
+export const metadata: Metadata = { title: "Статус инфраструктуры", description: "Актуальное состояние серверных локаций ST VILLAGE." };
+export const revalidate = 60;
+
+export default function StatusPage() { return <><PageHero eyebrow="Статус" title="Состояние инфраструктуры" text="Здесь публикуются фактические данные мониторинга и сообщения о технических работах." /><section className="section-shell page-content"><div className="status-summary"><article className="status-card"><h2>Общее состояние</h2><div className="status-big"><span className="status-dot" />Данные временно недоступны</div></article><article className="status-card"><h2>Обновление</h2><div className="meta-grid"><div><small>Источник</small><strong>Мониторинг API</strong></div><div><small>Последнее обновление</small><strong>Нет данных</strong></div></div></article></div><div className="notice"><span>ⓘ</span><div><strong>Никаких случайных показателей</strong>До подключения мониторинга задержка и загрузка не отображаются.</div></div><div className="location-list">{locations.map((location) => <div className="location-row" key={location.code}><div className="location-name"><span className="flag-placeholder">{location.code}</span><div><strong>{location.name}</strong><small>{location.region}</small></div></div><div className="location-status"><span className="status-dot status-neutral" /> Данные временно недоступны</div><div className="latency">— мс</div></div>)}</div></section></>; }

@@ -1,0 +1,1 @@
+export async function GET() { return Response.json({ status: "unavailable", dependency: "remnawave", message: "Интеграция Remnawave не настроена" }, { status: 503, headers: { "Cache-Control": "no-store" } }); }

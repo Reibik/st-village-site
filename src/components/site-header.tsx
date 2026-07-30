@@ -28,7 +28,7 @@ export function SiteHeader() {
           <button className="theme-toggle" type="button" onClick={toggleTheme} aria-label="Переключить цветовую тему"><span className="theme-moon">◒</span><span className="theme-sun">☼</span></button>
           <a className="button button-secondary button-small" href={CABINET_URL} target="_blank" rel="noreferrer">Кабинет ↗</a>
           <Link className="button button-primary button-small" href="/pricing">Тарифы</Link>
-          <button className="menu-toggle" type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-controls="mobile-nav" aria-label="Открыть меню">{open ? "×" : "≡"}</button>
+          <button className="menu-toggle" type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-controls="mobile-nav" aria-label={open ? "Закрыть меню" : "Открыть меню"}>{open ? "×" : "≡"}</button>
         </div>
       </div>
       {open && <nav className="mobile-nav section-shell" id="mobile-nav" aria-label="Мобильная навигация">{navItems.map(([label, href]) => <Link href={href} key={href} onClick={() => setOpen(false)}>{label}</Link>)}<a href={CABINET_URL} target="_blank" rel="noreferrer" onClick={() => setOpen(false)}>Открыть личный кабинет ↗</a></nav>}

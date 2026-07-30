@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { CtaPanel } from "@/src/components/cta-panel";
+import { CountryFlag } from "@/src/components/country-flag";
 import { FaqList } from "@/src/components/faq-list";
 import { SectionHeading } from "@/src/components/section-heading";
 import { PlatformStrip } from "@/src/components/platform-strip";
@@ -16,7 +17,7 @@ const advantages = [
   {
     index: "02",
     title: "Инфраструктура под наблюдением",
-    text: "Отдельный личный кабинет связан с Telegram-ботом и доступен клиентам по прямой ссылке с сайта.",
+    text: "Состояние сервисов и серверных локаций доступно на отдельной странице и обновляется автоматически.",
   },
   {
     index: "03",
@@ -53,7 +54,7 @@ export default function Home() {
           <div className="hero-orbit orbit-one" />
           <div className="hero-orbit orbit-two" />
           <div className="logo-halo" />
-          <Image src="/brand-emblem.png" alt="Эмблема ST VILLAGE с фирменным роботом" width="720" height="720" priority sizes="(max-width: 680px) 92vw, 500px" />
+          <Image src="/brand-emblem.png" alt="Эмблема ST VILLAGE с фирменным роботом" width="720" height="720" priority unoptimized sizes="(max-width: 680px) 92vw, 500px" />
           <div className="signal-card signal-card-top"><span className="signal-icon">◎</span><div><small>Состояние</small><strong>Мониторинг активен</strong></div></div>
           <div className="signal-card signal-card-bottom"><span className="signal-icon">⌁</span><div><small>Подключение</small><strong>Пошаговая настройка</strong></div></div>
         </div>
@@ -117,13 +118,12 @@ export default function Home() {
       </section>
 
       <section className="section-shell section-block" id="locations">
-        <SectionHeading eyebrow="Инфраструктура" title="Серверные локации" text="Фактические статусы и задержки будут поступать из мониторинга. Случайные показатели не используются." action={{ label: "Страница состояния", href: "/status" }} />
+        <SectionHeading eyebrow="Инфраструктура" title="Серверные локации" text="Состояние серверов поступает из Remnawave и доступно на отдельной странице мониторинга." action={{ label: "Страница состояния", href: "/status" }} />
         <div className="location-list">
           {locations.map((location) => (
             <div className="location-row" key={location.code}>
-              <div className="location-name"><span className="flag-placeholder">{location.code}</span><div><strong>{location.name}</strong><small>{location.region}</small></div></div>
-              <div className="location-status"><span className="status-dot status-neutral" /> Данные ожидаются</div>
-              <div className="latency">— мс</div>
+              <div className="location-name"><CountryFlag code={location.code} /><div><strong>{location.name}</strong><small>{location.region}</small></div></div>
+              <div className="location-status"><span className="status-pill status-unknown"><span className="status-dot" />Состояние в мониторинге</span></div>
             </div>
           ))}
         </div>

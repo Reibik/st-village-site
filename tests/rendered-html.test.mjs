@@ -24,8 +24,45 @@ test("server-renders the ST VILLAGE public home page", async () => {
   assert.match(html, /Открыть личный кабинет/);
   assert.match(html, /https:\/\/cabinet\.stvillage\.ru/);
   assert.match(html, /https:\/\/t\.me\/st_village_vpn_bot/);
+  assert.match(html, /src="\/brand-emblem\.png"/);
+  assert.doesNotMatch(html, /_vinext\/image/);
+  assert.doesNotMatch(html, /— мс/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|lorem ipsum/i);
   assert.doesNotMatch(html, /\bVPN\b/i);
+});
+
+test("all public pages render their expected content", async () => {
+  const pages = [
+    ["/pricing", "Выберите удобный период"],
+    ["/connect", "Настройка шаг за шагом"],
+    ["/status", "Состояние инфраструктуры"],
+    ["/news", "Обновления сервиса"],
+    ["/support", "Помощь, когда она нужна"],
+    ["/legal/privacy", "Политика конфиденциальности"],
+    ["/legal/terms", "Условия использования"],
+  ];
+  for (const [path, heading] of pages) {
+    const response = await worker.fetch(new Request(`http://localhost${path}`, { headers: { accept: "text/html" } }), env, context);
+    assert.equal(response.status, 200, path);
+    assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i, path);
+    const html = await response.text();
+    assert.match(html, new RegExp(`<h1[^>]*>${heading}</h1>`), path);
+    assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|lorem ipsum/i, path);
+  }
+});
+
+test("system routes, redirect and not-found responses are valid", async () => {
+  for (const path of ["/robots.txt", "/sitemap.xml", "/manifest.webmanifest"]) {
+    const response = await worker.fetch(new Request(`http://localhost${path}`), env, context);
+    assert.equal(response.status, 200, path);
+  }
+  const login = await worker.fetch(new Request("http://localhost/login", { redirect: "manual" }), env, context);
+  assert.match(String(login.status), /^30[78]$/);
+  assert.equal(login.headers.get("location"), "https://cabinet.stvillage.ru/");
+
+  const missing = await worker.fetch(new Request("http://localhost/definitely-not-found", { headers: { accept: "text/html" } }), env, context);
+  assert.equal(missing.status, 404);
+  assert.match(await missing.text(), /Такой страницы нет/);
 });
 
 test("health endpoint reports the web process without exposing internals", async () => {

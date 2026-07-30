@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { CountryFlag } from "@/src/components/country-flag";
 import type { MonitorStatus, StatusSnapshot } from "@/src/server/status/types";
 
 const statusLabels: Record<MonitorStatus, string> = {
@@ -11,14 +12,6 @@ const statusLabels: Record<MonitorStatus, string> = {
   unknown: "Нет данных",
 };
 
-const countryLabels: Record<string, string> = {
-  DE: "Германия",
-  FI: "Финляндия",
-  NL: "Нидерланды",
-  PL: "Польша",
-  SE: "Швеция",
-};
-
 function formatTime(value: string | null) {
   if (!value) return "—";
   return new Intl.DateTimeFormat("ru-RU", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date(value));
@@ -26,13 +19,6 @@ function formatTime(value: string | null) {
 
 function StatusPill({ status }: { status: MonitorStatus }) {
   return <span className={`status-pill status-${status}`}><span className="status-dot" />{statusLabels[status]}</span>;
-}
-
-function CountryFlag({ code }: { code: string }) {
-  const normalizedCode = code.toUpperCase();
-  const country = countryLabels[normalizedCode];
-  if (!country) return <span className="flag-placeholder" aria-label={`Код страны ${normalizedCode}`}>{normalizedCode}</span>;
-  return <span className={`flag-placeholder country-flag flag-${normalizedCode.toLowerCase()}`} role="img" aria-label={`Флаг страны ${country}`} />;
 }
 
 export function StatusDashboard() {

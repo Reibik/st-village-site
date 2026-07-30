@@ -8,6 +8,8 @@ export const locations = [
   { code: "NL", name: "Нидерланды", region: "Западная Европа" },
   { code: "DE", name: "Германия", region: "Центральная Европа" },
   { code: "FI", name: "Финляндия", region: "Северная Европа" },
+  { code: "PL", name: "Польша", region: "Центральная Европа" },
+  { code: "SE", name: "Швеция", region: "Северная Европа" },
 ] as const;
 
 export const homeFaqs = [

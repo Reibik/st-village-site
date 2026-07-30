@@ -39,8 +39,8 @@ test("all public pages render their expected content", async () => {
     ["/status", "Состояние инфраструктуры"],
     ["/news", "Обновления сервиса"],
     ["/support", "Помощь, когда она нужна"],
-    ["/legal/privacy", "Политика конфиденциальности"],
-    ["/legal/terms", "Условия использования"],
+    ["/legal/privacy", "Политика конфиденциальности 🚀ST VILLAGE🚀"],
+    ["/legal/terms", "Публичная оферта сервиса 🚀ST VILLAGE🚀"],
   ];
   for (const [path, heading] of pages) {
     const response = await worker.fetch(new Request(`http://localhost${path}`, { headers: { accept: "text/html" } }), env, context);
@@ -51,6 +51,10 @@ test("all public pages render their expected content", async () => {
     if (path === "/connect") {
       assert.match(html, />Happ</);
       assert.match(html, />INCY</);
+    }
+    if (path.startsWith("/legal/")) {
+      assert.match(html, /@st_village_vpn_bot/);
+      assert.doesNotMatch(html, /Черновая структура|Требуется юридическая редакция/);
     }
     assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|lorem ipsum/i, path);
   }

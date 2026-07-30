@@ -74,6 +74,20 @@ test("health endpoint reports the web process without exposing internals", async
   assert.equal(typeof payload.timestamp, "string");
 });
 
+test("version endpoint detects a newer deployment without being cached", async () => {
+  const current = await worker.fetch(new Request("http://localhost/api/version"), env, context);
+  assert.equal(current.status, 200);
+  assert.match(current.headers.get("cache-control") ?? "", /no-store/i);
+  const currentPayload = await current.json();
+  assert.equal(typeof currentPayload.version, "string");
+  assert.equal(currentPayload.version.length > 0, true);
+  assert.equal(currentPayload.updateAvailable, false);
+
+  const stale = await worker.fetch(new Request("http://localhost/api/version?current=previous-build"), env, context);
+  assert.equal(stale.status, 200);
+  assert.equal((await stale.json()).updateAvailable, true);
+});
+
 test("status endpoint returns a sanitized live snapshot", async () => {
   const response = await worker.fetch(new Request("http://localhost/api/status"), env, context);
   assert.equal(response.status, 200);

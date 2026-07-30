@@ -12,7 +12,7 @@ const advantages = [
   {
     index: "01",
     title: "Подключение без лишней сложности",
-    text: "Пошаговые инструкции для популярных платформ и понятный путь от выбора тарифа до готового подключения.",
+    text: "Пошаговый мастер сосредоточен на двух основных приложениях — Happ и INCY — и ведёт до готового подключения.",
   },
   {
     index: "02",
@@ -56,7 +56,7 @@ export default function Home() {
           <div className="logo-halo" />
           <Image src="/brand-emblem.png" alt="Эмблема ST VILLAGE с фирменным роботом" width="720" height="720" priority unoptimized sizes="(max-width: 680px) 92vw, 500px" />
           <div className="signal-card signal-card-top"><span className="signal-icon">◎</span><div><small>Состояние</small><strong>Мониторинг активен</strong></div></div>
-          <div className="signal-card signal-card-bottom"><span className="signal-icon">⌁</span><div><small>Подключение</small><strong>Пошаговая настройка</strong></div></div>
+          <div className="signal-card signal-card-bottom"><span className="signal-icon">⌁</span><div><small>Подключение</small><strong>Happ и INCY</strong></div></div>
         </div>
       </section>
 

@@ -35,7 +35,7 @@ test("server-renders the ST VILLAGE public home page", async () => {
 test("all public pages render their expected content", async () => {
   const pages = [
     ["/pricing", "Выберите удобный период"],
-    ["/connect", "Настройка шаг за шагом"],
+    ["/connect", "Happ и INCY — два основных приложения"],
     ["/status", "Состояние инфраструктуры"],
     ["/news", "Обновления сервиса"],
     ["/support", "Помощь, когда она нужна"],
@@ -48,6 +48,10 @@ test("all public pages render their expected content", async () => {
     assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i, path);
     const html = await response.text();
     assert.match(html, new RegExp(`<h1[^>]*>${heading}</h1>`), path);
+    if (path === "/connect") {
+      assert.match(html, />Happ</);
+      assert.match(html, />INCY</);
+    }
     assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|lorem ipsum/i, path);
   }
 });

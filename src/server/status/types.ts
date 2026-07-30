@@ -16,7 +16,6 @@ export interface LocationStatus {
   name: string;
   region: string;
   status: MonitorStatus;
-  latencyMs: number | null;
   checkedAt: string;
   message: string;
 }

@@ -45,6 +45,7 @@ test("status endpoint returns a sanitized live snapshot", async () => {
   assert.equal(Array.isArray(payload.services), true);
   assert.equal(Array.isArray(payload.locations), true);
   assert.equal(payload.refreshAfterSeconds, 30);
+  assert.equal(payload.locations.every((location) => !("latencyMs" in location)), true);
   assert.doesNotMatch(JSON.stringify(payload), /REMNAWAVE_API_TOKEN|probeUrl|remnawaveUuid|Authorization/i);
 });
 

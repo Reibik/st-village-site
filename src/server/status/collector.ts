@@ -239,7 +239,6 @@ async function collectLocation(location: LocationConfig, remnawave: RemnawaveRes
     name: location.name,
     region: location.region,
     status,
-    latencyMs: probe?.latencyMs ?? null,
     checkedAt: probe?.checkedAt ?? remnawave.service.checkedAt,
     message,
   };

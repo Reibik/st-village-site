@@ -74,15 +74,14 @@ export function StatusDashboard() {
       </article>)}
     </div>
 
-    <div className="status-section-heading"><div><span className="eyebrow">Локации</span><h2>Серверные узлы</h2></div><p>Состояние определяется независимой проверкой и, после подключения, данными Remnawave.</p></div>
+    <div className="status-section-heading"><div><span className="eyebrow">Локации</span><h2>Серверные узлы</h2></div><p>Фактическое состояние подключения каждого узла получаем напрямую из Remnawave.</p></div>
     <div className="location-list">
       {snapshot.locations.map((location) => <div className="location-row" key={location.id}>
         <div className="location-name"><span className="flag-placeholder">{location.code}</span><div><strong>{location.name}</strong><small>{location.region}</small></div></div>
         <div className="location-status"><StatusPill status={location.status} /><small>{location.message}</small></div>
-        <div className="latency">{location.latencyMs === null ? "—" : `${location.latencyMs} мс`}</div>
       </div>)}
     </div>
 
-    <div className="status-note"><span>i</span><p><strong>Как читать данные</strong>Проверка страницы Telegram подтверждает только доступность ссылки. Реальное состояние процесса бота появится после добавления закрытого health-check адреса. Токены и адреса серверов никогда не передаются в браузер.</p></div>
+    <div className="status-note"><span>i</span><p><strong>Как читать данные</strong>Задержка для локаций не отображается: без независимых точек проверки такой показатель был бы неточным. Проверка страницы Telegram подтверждает только доступность ссылки. Токены и адреса серверов никогда не передаются в браузер.</p></div>
   </>;
 }

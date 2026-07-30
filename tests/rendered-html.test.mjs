@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 process.env.STATUS_PROBE_TIMEOUT_MS = "500";
@@ -51,6 +52,9 @@ test("all public pages render their expected content", async () => {
     if (path === "/connect") {
       assert.match(html, />Happ</);
       assert.match(html, />INCY</);
+      assert.match(html, /https:\/\/www\.happ\.su\/main/);
+      assert.match(html, /https:\/\/incy\.cc\//);
+      assert.match(html, /Только официальные версии/);
     }
     if (path.startsWith("/legal/")) {
       assert.match(html, /@st_village_vpn_bot/);
@@ -117,4 +121,19 @@ test("unconfigured integrations fail honestly", async () => {
     assert.equal(payload.status, "unavailable");
     assert.doesNotMatch(JSON.stringify(payload), /stack|password|token/i);
   }
+});
+
+test("connection center uses official Happ and INCY downloads for every platform", async () => {
+  const config = await readFile(new URL("../src/config/connection-apps.ts", import.meta.url), "utf8");
+  const wizard = await readFile(new URL("../src/features/connect/connection-wizard.tsx", import.meta.url), "utf8");
+  for (const officialHost of ["www.happ.su", "apps.apple.com", "play.google.com", "github.com/Happ-proxy", "incy.cc", "github.com/INCY-DEV"]) {
+    assert.match(config, new RegExp(officialHost.replaceAll(".", "\\.")), officialHost);
+  }
+  for (const platform of ["ios", "android", "windows", "macos", "linux", "android-tv"]) {
+    assert.match(config, new RegExp(`(?:id: )?"${platform}"`), platform);
+  }
+  assert.match(wizard, /detectDevice\(\)/);
+  assert.match(wizard, /support_\$\{deviceId\.replace/);
+  assert.match(wizard, /Типовые ошибки/);
+  assert.match(wizard, /Добавьте подписку из кабинета/);
 });

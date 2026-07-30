@@ -5,6 +5,7 @@ import { FaqList } from "@/src/components/faq-list";
 import { SectionHeading } from "@/src/components/section-heading";
 import { PlatformStrip } from "@/src/components/platform-strip";
 import { homeFaqs, locations, plans } from "@/src/config/content";
+import { CABINET_URL, TELEGRAM_BOT_URL } from "@/src/config/links";
 
 const advantages = [
   {
@@ -15,18 +16,18 @@ const advantages = [
   {
     index: "02",
     title: "Инфраструктура под наблюдением",
-    text: "Состояние локаций, уведомления о работах и история изменений собраны в одном прозрачном интерфейсе.",
+    text: "Отдельный личный кабинет связан с Telegram-ботом и доступен клиентам по прямой ссылке с сайта.",
   },
   {
     index: "03",
     title: "Управление в одном месте",
-    text: "Подписка, устройства, подключение и обращения в поддержку доступны из единого личного пространства.",
+    text: "Сайт, отдельный кабинет и Telegram-бот образуют понятный маршрут без дублирования интерфейсов.",
   },
 ];
 
 const steps = [
-  ["01", "Выберите формат", "Сравните периоды и количество устройств."],
-  ["02", "Получите доступ", "Ссылка подключения появится в личном кабинете."],
+  ["01", "Откройте Telegram-бота", "Начните работу в официальном боте ST VILLAGE."],
+  ["02", "Перейдите в кабинет", "Управляйте сервисом на отдельном клиентском портале."],
   ["03", "Настройте устройство", "Следуйте инструкции для своей платформы."],
 ];
 
@@ -39,13 +40,13 @@ export default function Home() {
           <h1 id="hero-title">Стабильное подключение <span>к цифровому миру</span></h1>
           <p className="hero-lead">Современная инфраструктура, удобное управление и поддержка на каждом этапе — в одном аккуратном сервисе.</p>
           <div className="hero-actions">
-            <Link className="button button-primary" href="/pricing">Начать пользоваться <span aria-hidden="true">→</span></Link>
-            <Link className="button button-secondary" href="/login"><span className="telegram-glyph" aria-hidden="true">↗</span> Открыть Telegram-бота</Link>
+            <a className="button button-primary" href={CABINET_URL} target="_blank" rel="noreferrer">Открыть личный кабинет <span aria-hidden="true">↗</span></a>
+            <a className="button button-secondary" href={TELEGRAM_BOT_URL} target="_blank" rel="noreferrer"><span className="telegram-glyph" aria-hidden="true">↗</span> Открыть Telegram-бота</a>
           </div>
           <div className="hero-facts" aria-label="Возможности сервиса">
             <div><strong>6</strong><span>поддерживаемых платформ</span></div>
             <div><strong>24/7</strong><span>страница состояния</span></div>
-            <div><strong>1</strong><span>единый кабинет</span></div>
+            <div><strong>2</strong><span>прямых клиентских канала</span></div>
           </div>
         </div>
         <div className="hero-visual" aria-label="Фирменный помощник ST VILLAGE">
@@ -81,33 +82,33 @@ export default function Home() {
           <p>Продуманная структура помогает быстро найти нужное действие: от первого подключения до обращения в поддержку.</p>
           <ul className="check-list">
             <li><span>✓</span> Безопасное управление подключением</li>
-            <li><span>✓</span> Личный кабинет и уведомления</li>
+            <li><span>✓</span> Отдельный личный кабинет</li>
             <li><span>✓</span> Инструкции для всех основных устройств</li>
             <li><span>✓</span> Прозрачная страница состояния</li>
           </ul>
-          <Link className="text-link" href="/connect">Посмотреть процесс подключения <span>→</span></Link>
+          <a className="text-link" href={CABINET_URL} target="_blank" rel="noreferrer">Перейти в кабинет <span>↗</span></a>
         </div>
         <div className="control-panel" aria-label="Пример интерфейса управления">
-          <div className="panel-bar"><span>Моё подключение</span><span className="panel-badge">Интерфейс кабинета</span></div>
+          <div className="panel-bar"><span>Клиентский маршрут</span><span className="panel-badge">Кабинет + Telegram</span></div>
           <div className="connection-card">
-            <div className="connection-head"><div><small>Текущее состояние</small><strong>Данные появятся после входа</strong></div><span className="pulse-ring" /></div>
-            <div className="connection-line"><span>Устройства</span><strong>—</strong></div>
-            <div className="connection-line"><span>Период</span><strong>—</strong></div>
-            <div className="connection-progress"><span /></div>
+            <div className="connection-head"><div><small>Личный кабинет</small><strong>cabinet.stvillage.ru</strong></div><span className="pulse-ring" /></div>
+            <div className="connection-line"><span>Связь с сервисом</span><strong>Telegram-бот</strong></div>
+            <div className="connection-line"><span>Переход с сайта</span><strong>В один клик</strong></div>
+            <div className="client-links"><a href={CABINET_URL} target="_blank" rel="noreferrer">Открыть кабинет ↗</a><a href={TELEGRAM_BOT_URL} target="_blank" rel="noreferrer">Открыть бота ↗</a></div>
           </div>
-          <div className="mini-grid"><div><span>⌘</span><small>Устройства</small></div><div><span>◎</span><small>Локации</small></div><div><span>?</span><small>Поддержка</small></div></div>
+          <div className="mini-grid"><div><span>⌘</span><small>Кабинет</small></div><div><span>↗</span><small>Telegram</small></div><div><span>?</span><small>Инструкции</small></div></div>
         </div>
       </section>
 
       <section className="section-shell section-block" id="pricing">
-        <SectionHeading eyebrow="Тарифы" title="Выберите подходящий период" text="Интерфейс готов к загрузке тарифов из серверного каталога. До подключения базы цены честно не публикуются." action={{ label: "Все тарифы", href: "/pricing" }} />
+        <SectionHeading eyebrow="Тарифы" title="Выберите подходящий период" text="Сайт помогает сравнить формат использования, а актуальные условия и оформление доступны в отдельном личном кабинете." action={{ label: "Все тарифы", href: "/pricing" }} />
         <div className="pricing-grid compact-pricing">
           {plans.map((plan) => (
             <article className={`price-card${plan.highlighted ? " price-card-featured" : ""}`} key={plan.id}>
               {plan.highlighted && <div className="price-ribbon">Популярный период</div>}
               <span className="plan-kicker">{plan.kicker}</span>
               <h3>{plan.name}</h3>
-              <div className="price-placeholder">Цена будет опубликована</div>
+              <div className="price-placeholder">Актуальные условия — в кабинете</div>
               <p>{plan.description}</p>
               <Link className={plan.highlighted ? "button button-primary" : "button button-secondary"} href="/pricing">Подробнее <span>→</span></Link>
             </article>
@@ -129,7 +130,7 @@ export default function Home() {
       </section>
 
       <section className="section-shell section-block">
-        <SectionHeading eyebrow="Начало работы" title="Три понятных шага" text="Весь путь спроектирован так, чтобы первая настройка не требовала специальных знаний." />
+        <SectionHeading eyebrow="Начало работы" title="Три понятных шага" text="Бот и кабинет уже связаны между собой, а сайт помогает быстро выбрать нужный маршрут." />
         <div className="steps-grid">
           {steps.map(([number, title, text], index) => (
             <article className="step-card" key={number}>

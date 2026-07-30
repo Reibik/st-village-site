@@ -1,3 +1,3 @@
-import Link from "next/link";
+import { CABINET_URL, TELEGRAM_BOT_URL } from "@/src/config/links";
 
-export function CtaPanel() { return <div className="cta-panel"><div className="cta-copy"><div className="eyebrow">Готовы начать?</div><h2>Ваше цифровое пространство — в одном месте</h2><p>Выберите период, настройте устройство по инструкции и управляйте сервисом из личного кабинета.</p><Link className="button button-primary" href="/pricing">Посмотреть тарифы <span>→</span></Link></div></div>; }
+export function CtaPanel() { return <div className="cta-panel"><div className="cta-copy"><div className="eyebrow">Клиентское пространство</div><h2>Кабинет и бот всегда под рукой</h2><p>Открывайте отдельный личный кабинет для управления сервисом или переходите прямо в связанного Telegram-бота.</p><div className="cta-actions"><a className="button button-primary" href={CABINET_URL} target="_blank" rel="noreferrer">Открыть кабинет <span>↗</span></a><a className="button button-secondary" href={TELEGRAM_BOT_URL} target="_blank" rel="noreferrer">Telegram-бот <span>↗</span></a></div></div></div>; }

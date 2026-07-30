@@ -19,7 +19,9 @@ test("server-renders the ST VILLAGE public home page", async () => {
   assert.match(html, /<html lang="ru"/i);
   assert.match(html, /ST VILLAGE/);
   assert.match(html, /Стабильное подключение/);
-  assert.match(html, /Начать пользоваться/);
+  assert.match(html, /Открыть личный кабинет/);
+  assert.match(html, /https:\/\/cabinet\.stvillage\.ru/);
+  assert.match(html, /https:\/\/t\.me\/st_village_vpn_bot/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|lorem ipsum/i);
   assert.doesNotMatch(html, /\bVPN\b/i);
 });

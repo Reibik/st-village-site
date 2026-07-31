@@ -147,6 +147,7 @@ test("Telegram news integration uses the public channel without exposing credent
   const channel = await readFile(new URL("../src/server/telegram/channel.ts", import.meta.url), "utf8");
   const feed = await readFile(new URL("../src/features/news/telegram-news-feed.tsx", import.meta.url), "utf8");
   const embed = await readFile(new URL("../src/features/news/telegram-post-embed.tsx", import.meta.url), "utf8");
+  const caddy = await readFile(new URL("../ops/vps/Caddyfile", import.meta.url), "utf8");
 
   assert.match(channel, /https:\/\/t\.me\/s\//);
   assert.match(channel, /data-post=/);
@@ -154,5 +155,7 @@ test("Telegram news integration uses the public channel without exposing credent
   assert.match(route, /s-maxage=90/);
   assert.match(feed, /REFRESH_INTERVAL_MS/);
   assert.match(embed, /telegram-widget\.js/);
+  assert.match(caddy, /script-src[^\n]+https:\/\/telegram\.org/);
+  assert.match(caddy, /frame-src https:\/\/t\.me https:\/\/telegram\.org/);
   assert.doesNotMatch(`${route}${channel}${feed}${embed}`, /BOT_TOKEN|Authorization:|api\.telegram\.org/);
 });

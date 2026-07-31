@@ -17,6 +17,8 @@ test("server-renders the ST VILLAGE public home page", async () => {
   const response = await worker.fetch(new Request("http://localhost/", { headers: { accept: "text/html" } }), env, context);
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
+  assert.equal(response.headers.get("x-st-village-release"), "1.0.0");
+  assert.equal(response.headers.get("x-st-village-channel"), "stable");
 
   const html = await response.text();
   assert.match(html, /<html lang="ru"/i);
@@ -25,7 +27,8 @@ test("server-renders the ST VILLAGE public home page", async () => {
   assert.match(html, /Открыть личный кабинет/);
   assert.match(html, /https:\/\/cabinet\.stvillage\.ru/);
   assert.match(html, /https:\/\/t\.me\/st_village_vpn_bot/);
-  assert.match(html, /class="footer-version">v(?:<!-- -->)?0\.9\.5<\/span>/);
+  assert.match(html, /class="footer-version"[^>]*>v(?:<!-- -->)?1\.0\.0<\/a>/);
+  assert.match(html, /href="\/release"/);
   assert.match(html, /src="\/brand-emblem\.png"/);
   assert.doesNotMatch(html, /_vinext\/image/);
   assert.doesNotMatch(html, /— мс/);
@@ -40,6 +43,7 @@ test("all public pages render their expected content", async () => {
     ["/status", "Состояние инфраструктуры"],
     ["/news", "Новости ST VILLAGE"],
     ["/support", "Помощь, когда она нужна"],
+    ["/release", "ST VILLAGE готов к стабильной работе"],
     ["/legal/privacy", "Политика конфиденциальности 🚀ST VILLAGE🚀"],
     ["/legal/terms", "Публичная оферта сервиса 🚀ST VILLAGE🚀"],
   ];
@@ -98,7 +102,9 @@ test("version endpoint detects a newer deployment without being cached", async (
   const currentPayload = await current.json();
   assert.equal(typeof currentPayload.version, "string");
   assert.equal(currentPayload.version.length > 0, true);
-  assert.equal(currentPayload.release, "0.9.5");
+  assert.equal(currentPayload.release, "1.0.0");
+  assert.equal(currentPayload.channel, "stable");
+  assert.equal(currentPayload.releaseName, "Стабильный запуск");
   assert.equal(currentPayload.updateAvailable, false);
 
   const stale = await worker.fetch(new Request("http://localhost/api/version?current=previous-build"), env, context);
@@ -220,6 +226,7 @@ test("search engines and social platforms receive complete page metadata", async
   const sitemapXml = await sitemap.text();
   assert.match(sitemapXml, /https:\/\/stvillage\.ru\/legal\/privacy/);
   assert.match(sitemapXml, /https:\/\/stvillage\.ru\/legal\/terms/);
+  assert.match(sitemapXml, /https:\/\/stvillage\.ru\/release/);
 
   const manifest = await worker.fetch(new Request("http://localhost/manifest.webmanifest"), env, context);
   const manifestJson = await manifest.json();
@@ -228,15 +235,18 @@ test("search engines and social platforms receive complete page metadata", async
   assert.equal(manifestJson.icons[1].src, "/icon-512.png");
 });
 
-test("v0.9.5 release safeguards are present", async () => {
+test("v1.0.0 stable release safeguards are present", async () => {
   const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
   const workflow = await readFile(new URL("../.github/workflows/quality.yml", import.meta.url), "utf8");
   const caddy = await readFile(new URL("../ops/vps/Caddyfile", import.meta.url), "utf8");
   const globalError = await readFile(new URL("../app/global-error.tsx", import.meta.url), "utf8");
   const security = await readFile(new URL("../public/.well-known/security.txt", import.meta.url), "utf8");
   const changelog = await readFile(new URL("../CHANGELOG.md", import.meta.url), "utf8");
+  const releaseConfig = await readFile(new URL("../src/config/release.ts", import.meta.url), "utf8");
+  const releasePage = await readFile(new URL("../app/release/page.tsx", import.meta.url), "utf8");
+  const worker = await readFile(new URL("../worker/index.ts", import.meta.url), "utf8");
 
-  assert.equal(packageJson.version, "0.9.5");
+  assert.equal(packageJson.version, "1.0.0");
   assert.match(packageJson.scripts.typecheck, /tsc --noEmit/);
   assert.match(packageJson.scripts["release:check"], /lint.*typecheck.*build.*rendered-html/s);
   assert.match(workflow, /pnpm release:check/);
@@ -248,5 +258,10 @@ test("v0.9.5 release safeguards are present", async () => {
   assert.doesNotMatch(globalError, /error\.(?:message|stack)|\{error\./);
   assert.match(security, /Contact: mailto:admin@stvillage\.ru/);
   assert.match(security, /Canonical: https:\/\/stvillage\.ru\/\.well-known\/security\.txt/);
-  assert.match(changelog, /0\.9\.5 — подготовка к релизу/);
+  assert.match(releaseConfig, /channel: "stable"/);
+  assert.match(releaseConfig, /name: "Стабильный запуск"/);
+  assert.match(releasePage, /Первый стабильный релиз/);
+  assert.match(worker, /X-ST-Village-Release/);
+  assert.match(worker, /X-ST-Village-Channel/);
+  assert.match(changelog, /1\.0\.0 — стабильный запуск/);
 });

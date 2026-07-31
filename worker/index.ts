@@ -1,6 +1,7 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+import { SITE_RELEASE } from "../src/config/release";
 
 interface Env {
   ASSETS: Fetcher;
@@ -19,6 +20,17 @@ interface ExecutionContext {
   passThroughOnException(): void;
 }
 
+function withReleaseHeaders(response: Response): Response {
+  const headers = new Headers(response.headers);
+  headers.set("X-ST-Village-Release", SITE_RELEASE.version);
+  headers.set("X-ST-Village-Channel", SITE_RELEASE.channel);
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 // Image security config. SVG sources with .svg extension auto-skip the
 // optimization endpoint on the client side (served directly, no proxy).
 // To route SVGs through the optimizer (with security headers), set
@@ -30,7 +42,7 @@ const worker = {
     const url = new URL(request.url);
 
     if (url.pathname === "/.well-known/security.txt") {
-      return new Response(
+      return withReleaseHeaders(new Response(
         "Contact: mailto:admin@stvillage.ru\n" +
           "Canonical: https://stvillage.ru/.well-known/security.txt\n" +
           "Preferred-Languages: ru, en\n" +
@@ -41,21 +53,21 @@ const worker = {
             "Content-Type": "text/plain; charset=utf-8",
           },
         },
-      );
+      ));
     }
 
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
-      return handleImageOptimization(request, {
+      return withReleaseHeaders(await handleImageOptimization(request, {
         fetchAsset: (path) => env.ASSETS.fetch(new Request(new URL(path, request.url))),
         transformImage: async (body, { width, format, quality }) => {
           const result = await env.IMAGES.input(body).transform(width > 0 ? { width } : {}).output({ format, quality });
           return result.response();
         },
-      }, allowedWidths);
+      }, allowedWidths));
     }
 
-    return handler.fetch(request, env, ctx);
+    return withReleaseHeaders(await handler.fetch(request, env, ctx));
   },
 };
 

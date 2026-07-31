@@ -29,6 +29,21 @@ const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
+    if (url.pathname === "/.well-known/security.txt") {
+      return new Response(
+        "Contact: mailto:admin@stvillage.ru\n" +
+          "Canonical: https://stvillage.ru/.well-known/security.txt\n" +
+          "Preferred-Languages: ru, en\n" +
+          "Expires: 2027-07-31T00:00:00.000Z\n",
+        {
+          headers: {
+            "Cache-Control": "public, max-age=3600",
+            "Content-Type": "text/plain; charset=utf-8",
+          },
+        },
+      );
+    }
+
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
       return handleImageOptimization(request, {

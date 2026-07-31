@@ -10,6 +10,8 @@
         -Server
         X-Content-Type-Options "nosniff"
         X-Frame-Options "DENY"
+        X-Permitted-Cross-Domain-Policies "none"
+        Cross-Origin-Opener-Policy "same-origin-allow-popups"
         Referrer-Policy "strict-origin-when-cross-origin"
         Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
         Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
@@ -25,7 +27,13 @@ stvillage.ru {
     header @immutable Cache-Control "public, max-age=31536000, immutable"
 
     @dynamic path /api/*
-    header @dynamic Cache-Control "no-store"
+    header @dynamic {
+        Cache-Control "no-store"
+        X-Robots-Tag "noindex, nofollow, nosnippet"
+    }
+
+    @brand_assets path /og-social-v2.png /icon-192.png /icon-512.png /apple-touch-icon.png /favicon.ico /favicon.svg
+    header @brand_assets Cache-Control "public, max-age=86400, stale-while-revalidate=604800"
 
     reverse_proxy 127.0.0.1:3000 {
         transport http {

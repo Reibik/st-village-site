@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import packageJson from "@/package.json";
 import { PageHero } from "@/src/components/page-hero";
 import { CONNECTION_APPS } from "@/src/config/connection-apps";
 import { createPageMetadata } from "@/src/config/seo";
@@ -13,7 +14,7 @@ export const metadata: Metadata = createPageMetadata({
 export default function ConnectPage() {
   return <>
     <PageHero
-      eyebrow="Подключение · v0.8.1"
+      eyebrow={`Подключение · v${packageJson.version}`}
       title="Happ и INCY — два основных приложения"
       text="Сайт определит ваше устройство, предложит подходящее приложение и проведёт от загрузки до первого подключения. Персональные данные подключения остаются в отдельном кабинете ST VILLAGE."
     />

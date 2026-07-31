@@ -1,3 +1,5 @@
+import packageJson from "@/package.json";
+
 export async function GET(request: Request) {
   const currentVersion = new URL(request.url).searchParams.get("current");
   const version = __ST_VILLAGE_BUILD_VERSION__;
@@ -5,6 +7,7 @@ export async function GET(request: Request) {
   return Response.json(
     {
       version,
+      release: packageJson.version,
       updateAvailable: Boolean(currentVersion && currentVersion !== version),
     },
     {

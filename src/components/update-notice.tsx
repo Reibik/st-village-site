@@ -6,11 +6,12 @@ const currentVersion = __ST_VILLAGE_BUILD_VERSION__;
 const checkIntervalMs = 60_000;
 
 type VersionResponse = {
+  release?: string;
   updateAvailable?: boolean;
 };
 
 export function UpdateNotice() {
-  const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [availableRelease, setAvailableRelease] = useState<string | null>(null);
 
   useEffect(() => {
     let disposed = false;
@@ -25,7 +26,7 @@ export function UpdateNotice() {
 
         const payload = (await response.json()) as VersionResponse;
         if (!disposed && payload.updateAvailable === true) {
-          setUpdateAvailable(true);
+          setAvailableRelease(payload.release ?? "новая");
         }
       } catch {
         // A failed background check must never interrupt the site.
@@ -51,14 +52,14 @@ export function UpdateNotice() {
     };
   }, []);
 
-  if (!updateAvailable) return null;
+  if (!availableRelease) return null;
 
   return (
     <aside className="update-notice" role="status" aria-live="polite" aria-label="Доступно обновление сайта">
       <span className="update-notice-icon" aria-hidden="true">↻</span>
       <div className="update-notice-copy">
         <strong>Сайт обновился</strong>
-        <span>Доступна новая версия.</span>
+        <span>{availableRelease === "новая" ? "Доступна новая версия." : `Доступна версия v${availableRelease}.`}</span>
       </div>
       <button className="update-notice-button" type="button" onClick={() => window.location.reload()}>
         Обновить

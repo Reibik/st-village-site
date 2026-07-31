@@ -1,6 +1,6 @@
 {
   "name": "st-village",
-  "version": "0.8.1",
+  "version": "0.9.5",
   "private": true,
   "packageManager": "pnpm@11.9.0",
   "engines": {
@@ -11,7 +11,9 @@
     "build": "vinext build",
     "start": "vinext start",
     "test": "npm run build && node --test tests/rendered-html.test.mjs",
-    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern worker"
+    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern worker",
+    "typecheck": "tsc --noEmit --pretty false",
+    "release:check": "pnpm lint && pnpm typecheck && pnpm build && node --test tests/rendered-html.test.mjs"
   },
   "dependencies": {
     "next": "16.2.11",

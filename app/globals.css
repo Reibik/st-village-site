@@ -282,7 +282,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 @media (prefers-reduced-motion: reduce) { *,*::before,*::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }
 
-/* Connection center · v0.8.1 */
+/* Connection center */
 .connect-official-link { margin-top: 17px; }
 .wizard-panel h2 { margin: 14px 0 8px; font-size: 30px; letter-spacing: -.04em; }
 .wizard-copy { max-width: 760px; margin: 0; color: var(--muted); }

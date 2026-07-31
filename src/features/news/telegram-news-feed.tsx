@@ -1,10 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { TELEGRAM_NEWS_CHANNEL, TELEGRAM_NEWS_URL } from "@/src/config/links";
-import { TelegramPostEmbed } from "./telegram-post-embed";
+import { TELEGRAM_NEWS_URL } from "@/src/config/links";
+import { TelegramPostCard } from "./telegram-post-card";
 
-interface TelegramPost { id: string; url: string }
+interface TelegramPost {
+  id: string;
+  url: string;
+  html: string;
+  images: Array<{ url: string; alt: string }>;
+  publishedAt: string | null;
+  views: string | null;
+  buttons: Array<{ label: string; url: string }>;
+}
 interface TelegramNewsPayload { channel: string; posts: TelegramPost[] }
 interface TelegramNewsFeedProps { limit?: number; compact?: boolean }
 
@@ -56,7 +64,7 @@ export function TelegramNewsFeed({ limit = 8, compact = false }: TelegramNewsFee
   return (
     <>
       <div className={`telegram-feed-grid${compact ? " telegram-feed-compact" : ""}`}>
-        {posts.map((post) => <TelegramPostEmbed channel={TELEGRAM_NEWS_CHANNEL} postId={post.id} postUrl={post.url} key={post.id} />)}
+        {posts.map((post) => <TelegramPostCard post={post} key={post.id} />)}
       </div>
       {unavailable && <p className="telegram-feed-note">Показываем последние загруженные новости. Обновление ленты временно задерживается.</p>}
     </>

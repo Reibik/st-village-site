@@ -25,7 +25,10 @@ if [[ "$target_sha" == "$active_sha" ]] && systemctl is-active --quiet st-villag
 fi
 
 release="${releases}/${target_sha}"
-previous="$(readlink -f "${app_root}/current" 2>/dev/null || true)"
+previous=""
+if [[ -L "${app_root}/current" || -d "${app_root}/current" ]]; then
+  previous="$(readlink -f "${app_root}/current" 2>/dev/null || true)"
+fi
 
 if [[ ! -d "$release" ]]; then
   git -C "$repository" worktree add --detach "$release" "$target_sha"

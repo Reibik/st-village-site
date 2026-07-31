@@ -37,9 +37,11 @@ fi
 set -a
 source /etc/st-village/site.env
 set +a
+export CI=true
+export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=512}"
 
 cd "$release"
-pnpm install --frozen-lockfile --prefer-offline
+pnpm install --frozen-lockfile --prefer-offline --child-concurrency=2 --network-concurrency=8
 pnpm build
 
 ln -sfn "$release" "${app_root}/current.next"

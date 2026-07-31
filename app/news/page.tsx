@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import { PageHero } from "@/src/components/page-hero";
 import { TELEGRAM_NEWS_URL } from "@/src/config/links";
+import { createPageMetadata } from "@/src/config/seo";
 import { TelegramNewsFeed } from "@/src/features/news/telegram-news-feed";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
   title: "Новости",
   description: "Свежие новости, обновления и технические уведомления из официального Telegram-канала ST VILLAGE.",
-};
+  path: "/news",
+});
 
 export default function NewsPage() {
   return (

@@ -184,3 +184,45 @@ test("pricing is synchronized through the public Bedolaga landing API", async ()
   assert.match(exampleEnv, /BEDOLAGA_API_URL=https:\/\/cabinet\.stvillage\.ru\/api/);
   assert.doesNotMatch(`${route}${integration}${catalog}`, /X-API-Key|BOT_TOKEN|JWT|Authorization:/i);
 });
+
+test("search engines and social platforms receive complete page metadata", async () => {
+  const cases = [
+    ["/", "https://stvillage.ru/", "ST VILLAGE — защищённое подключение без лишней сложности"],
+    ["/pricing", "https://stvillage.ru/pricing", "Тарифы — ST VILLAGE"],
+    ["/connect", "https://stvillage.ru/connect", "Подключение — ST VILLAGE"],
+    ["/status", "https://stvillage.ru/status", "Статус инфраструктуры — ST VILLAGE"],
+    ["/news", "https://stvillage.ru/news", "Новости — ST VILLAGE"],
+  ];
+
+  for (const [path, canonical, socialTitle] of cases) {
+    const response = await worker.fetch(new Request(`http://localhost${path}`, { headers: { accept: "text/html" } }), env, context);
+    assert.equal(response.status, 200, path);
+    const html = await response.text();
+    assert.match(html, new RegExp(`<link rel="canonical" href="${canonical.replaceAll("/", "\\/")}"`), path);
+    assert.match(html, new RegExp(`<meta property="og:title" content="${socialTitle}`), path);
+    assert.match(html, /<meta property="og:image" content="https:\/\/stvillage\.ru\/og-social-v2\.png"/);
+    assert.match(html, /<meta property="og:image:width" content="1200"/);
+    assert.match(html, /<meta property="og:image:height" content="630"/);
+    assert.match(html, /<meta name="twitter:card" content="summary_large_image"/);
+    assert.doesNotMatch(html, /st-village\.example|example\.com/);
+  }
+
+  const home = await worker.fetch(new Request("http://localhost/", { headers: { accept: "text/html" } }), env, context);
+  const homeHtml = await home.text();
+  assert.match(homeHtml, /type="application\/ld\+json"/);
+  assert.match(homeHtml, /https:\/\/schema\.org/);
+  assert.match(homeHtml, /"@type":"WebSite"/);
+  assert.match(homeHtml, /"@type":"Organization"/);
+  assert.match(homeHtml, /apple-touch-icon\.png/);
+
+  const sitemap = await worker.fetch(new Request("http://localhost/sitemap.xml"), env, context);
+  const sitemapXml = await sitemap.text();
+  assert.match(sitemapXml, /https:\/\/stvillage\.ru\/legal\/privacy/);
+  assert.match(sitemapXml, /https:\/\/stvillage\.ru\/legal\/terms/);
+
+  const manifest = await worker.fetch(new Request("http://localhost/manifest.webmanifest"), env, context);
+  const manifestJson = await manifest.json();
+  assert.equal(manifestJson.icons.length, 2);
+  assert.equal(manifestJson.icons[0].src, "/icon-192.png");
+  assert.equal(manifestJson.icons[1].src, "/icon-512.png");
+});

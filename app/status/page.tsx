@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { PageHero } from "@/src/components/page-hero";
+import { createPageMetadata } from "@/src/config/seo";
 import { StatusDashboard } from "@/src/features/status/status-dashboard";
 
-export const metadata: Metadata = { title: "Статус инфраструктуры", description: "Актуальное состояние сервисов и серверных локаций ST VILLAGE." };
+export const metadata: Metadata = createPageMetadata({ title: "Статус инфраструктуры", description: "Актуальное состояние сервисов и серверных локаций ST VILLAGE с автоматическим обновлением.", path: "/status" });
 
 export default function StatusPage() {
   return <>

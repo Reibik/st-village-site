@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { PageHero } from "@/src/components/page-hero";
 import { TELEGRAM_BOT_URL } from "@/src/config/links";
+import { createPageMetadata } from "@/src/config/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
   title: "Политика конфиденциальности",
   description: "Порядок обработки и защиты данных пользователей сервиса ST VILLAGE.",
-};
+  path: "/legal/privacy",
+});
 
 const sections = [
   ["privacy-general", "1. Общие положения"],

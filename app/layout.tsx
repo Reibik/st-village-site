@@ -2,25 +2,42 @@ import type { Metadata, Viewport } from "next";
 import { SiteFooter } from "@/src/components/site-footer";
 import { SiteHeader } from "@/src/components/site-header";
 import { UpdateNotice } from "@/src/components/update-notice";
+import { createPageMetadata, DEFAULT_DESCRIPTION, DEFAULT_TITLE, rootJsonLd, SITE_NAME, SITE_URL } from "@/src/config/seo";
 import "./globals.css";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://st-village.example";
+const homeMetadata = createPageMetadata({ title: DEFAULT_TITLE, description: DEFAULT_DESCRIPTION, path: "/" });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
-  title: { default: "ST VILLAGE — цифровая экосистема", template: "%s — ST VILLAGE" },
-  description: "Современная инфраструктура, удобное управление подключением и поддержка на каждом этапе.",
-  alternates: { canonical: "/" },
-  openGraph: {
-    type: "website",
-    locale: "ru_RU",
-    siteName: "ST VILLAGE",
-    title: "ST VILLAGE — стабильное подключение к цифровому миру",
-    description: "Технологии, сервисы и возможности в одной цифровой экосистеме.",
-    images: [{ url: "/og.png", width: 1200, height: 630, alt: "ST VILLAGE — Технологии, Сервисы, Возможности" }],
+  ...homeMetadata,
+  metadataBase: new URL(SITE_URL),
+  title: { default: DEFAULT_TITLE, template: `%s — ${SITE_NAME}` },
+  applicationName: SITE_NAME,
+  authors: [{ name: SITE_NAME, url: SITE_URL }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  category: "technology",
+  keywords: ["ST VILLAGE", "защищённое подключение", "Happ", "INCY", "личный кабинет", "Telegram-бот", "статус серверов"],
+  referrer: "origin-when-cross-origin",
+  formatDetection: { email: false, address: false, telephone: false },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.svg", type: "image/svg+xml" },
+      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
-  twitter: { card: "summary_large_image", title: "ST VILLAGE", description: "Технологии • Сервисы • Возможности", images: ["/og.png"] },
-  icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: "black-translucent" },
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || undefined,
+    yandex: process.env.YANDEX_SITE_VERIFICATION || undefined,
+  },
+  other: {
+    "msapplication-TileColor": "#0b0f14",
+  },
 };
 
 export const viewport: Viewport = { colorScheme: "dark light", themeColor: [{ media: "(prefers-color-scheme: dark)", color: "#0b0f14" }, { media: "(prefers-color-scheme: light)", color: "#f4f7fb" }] };
@@ -30,7 +47,10 @@ const themeScript = `(function(){try{var t=localStorage.getItem('st-theme');var 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ru" suppressHydrationWarning>
-      <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /></head>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(rootJsonLd).replace(/</g, "\\u003c") }} />
+      </head>
       <body>
         <a className="skip-link" href="#main-content">Перейти к содержанию</a>
         <div className="site-noise" aria-hidden="true" />

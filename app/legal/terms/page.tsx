@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { PageHero } from "@/src/components/page-hero";
 import { TELEGRAM_BOT_URL } from "@/src/config/links";
+import { createPageMetadata } from "@/src/config/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
   title: "Условия использования",
   description: "Публичная оферта и условия использования сервиса ST VILLAGE.",
-};
+  path: "/legal/terms",
+});
 
 const sections = [
   ["terms-general", "1. Общие положения"],

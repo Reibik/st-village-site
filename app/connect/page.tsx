@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import { PageHero } from "@/src/components/page-hero";
 import { CONNECTION_APPS } from "@/src/config/connection-apps";
+import { createPageMetadata } from "@/src/config/seo";
 import { ConnectionWizard } from "@/src/features/connect/connection-wizard";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
   title: "Подключение",
   description: "Официальные загрузки и пошаговая настройка ST VILLAGE через приложения Happ и INCY.",
-};
+  path: "/connect",
+});
 
 export default function ConnectPage() {
   return <>

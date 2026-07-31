@@ -44,3 +44,5 @@ next-env.d.ts
 /.pnpm-store/
 .dev-server*.log
 *.tsbuildinfo
+/backups/
+/.codex_*

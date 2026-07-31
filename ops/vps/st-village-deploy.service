@@ -1,0 +1,14 @@
+[Unit]
+Description=Synchronize and deploy ST VILLAGE from GitHub
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/st-village-deploy
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+NoNewPrivileges=false
+PrivateTmp=true
+ProtectHome=true

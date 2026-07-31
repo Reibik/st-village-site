@@ -35,7 +35,7 @@ test("server-renders the ST VILLAGE public home page", async () => {
 
 test("all public pages render their expected content", async () => {
   const pages = [
-    ["/pricing", "Выберите удобный период"],
+    ["/pricing", "Выберите удобный тариф"],
     ["/connect", "Happ и INCY — два основных приложения"],
     ["/status", "Состояние инфраструктуры"],
     ["/news", "Новости ST VILLAGE"],
@@ -160,4 +160,25 @@ test("Telegram news integration uses the public channel without exposing credent
   assert.match(caddy, /img-src[^\n]+https:\/\/\*\.telesco\.pe/);
   assert.doesNotMatch(caddy, /script-src[^;\n]+telegram\.org|frame-src/);
   assert.doesNotMatch(`${route}${channel}${feed}${card}`, /BOT_TOKEN|Authorization:|api\.telegram\.org/);
+});
+
+test("pricing is synchronized through the public Bedolaga landing API", async () => {
+  const route = await readFile(new URL("../app/api/pricing/route.ts", import.meta.url), "utf8");
+  const integration = await readFile(new URL("../src/server/bedolaga/pricing.ts", import.meta.url), "utf8");
+  const catalog = await readFile(new URL("../src/features/pricing/pricing-catalog.tsx", import.meta.url), "utf8");
+  const home = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const exampleEnv = await readFile(new URL("../.env.example", import.meta.url), "utf8");
+
+  assert.match(integration, /cabinet\/landing\/\$\{encodeURIComponent\(slug\)\}/);
+  assert.match(integration, /DEFAULT_LANDING_SLUG = "st-village"/);
+  assert.match(integration, /MAX_RESPONSE_BYTES/);
+  assert.match(integration, /CACHE_TTL_MS/);
+  assert.match(route, /s-maxage=300/);
+  assert.match(catalog, /fetch\("\/api\/pricing"/);
+  assert.match(catalog, /trafficLimitGb/);
+  assert.match(catalog, /deviceLimit/);
+  assert.match(catalog, /priceKopeks/);
+  assert.match(home, /<PricingCatalog compact/);
+  assert.match(exampleEnv, /BEDOLAGA_API_URL=https:\/\/cabinet\.stvillage\.ru\/api/);
+  assert.doesNotMatch(`${route}${integration}${catalog}`, /X-API-Key|BOT_TOKEN|JWT|Authorization:/i);
 });

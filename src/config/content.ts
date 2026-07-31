@@ -1,9 +1,3 @@
-export const plans = [
-  { id: "monthly", kicker: "Гибкий старт", name: "1 месяц", description: "Короткий период для знакомства с сервисом без долгих обязательств.", highlighted: false },
-  { id: "half-year", kicker: "Баланс", name: "6 месяцев", description: "Комфортный период для регулярного использования на выбранных устройствах.", highlighted: true },
-  { id: "annual", kicker: "Долгий период", name: "12 месяцев", description: "Длительный формат с единым циклом управления подпиской.", highlighted: false },
-] as const;
-
 export const locations = [
   { code: "NL", name: "Нидерланды", region: "Западная Европа" },
   { code: "DE", name: "Германия", region: "Центральная Европа" },

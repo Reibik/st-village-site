@@ -1,4 +1,3 @@
-import Link from "next/link";
 import Image from "next/image";
 import { CtaPanel } from "@/src/components/cta-panel";
 import { CountryFlag } from "@/src/components/country-flag";
@@ -6,7 +5,8 @@ import { FaqList } from "@/src/components/faq-list";
 import { SectionHeading } from "@/src/components/section-heading";
 import { PlatformStrip } from "@/src/components/platform-strip";
 import { TelegramNewsFeed } from "@/src/features/news/telegram-news-feed";
-import { homeFaqs, locations, plans } from "@/src/config/content";
+import { PricingCatalog } from "@/src/features/pricing/pricing-catalog";
+import { homeFaqs, locations } from "@/src/config/content";
 import { CABINET_URL, TELEGRAM_BOT_URL } from "@/src/config/links";
 
 const advantages = [
@@ -103,19 +103,8 @@ export default function Home() {
       </section>
 
       <section className="section-shell section-block" id="pricing">
-        <SectionHeading eyebrow="Тарифы" title="Выберите подходящий период" text="Сайт помогает сравнить формат использования, а актуальные условия и оформление доступны в отдельном личном кабинете." action={{ label: "Все тарифы", href: "/pricing" }} />
-        <div className="pricing-grid compact-pricing">
-          {plans.map((plan) => (
-            <article className={`price-card${plan.highlighted ? " price-card-featured" : ""}`} key={plan.id}>
-              {plan.highlighted && <div className="price-ribbon">Популярный период</div>}
-              <span className="plan-kicker">{plan.kicker}</span>
-              <h3>{plan.name}</h3>
-              <div className="price-placeholder">Актуальные условия — в кабинете</div>
-              <p>{plan.description}</p>
-              <Link className={plan.highlighted ? "button button-primary" : "button button-secondary"} href="/pricing">Подробнее <span>→</span></Link>
-            </article>
-          ))}
-        </div>
+        <SectionHeading eyebrow="Тарифы" title="Выберите подходящий вариант" text="Цены и условия автоматически синхронизируются с личным кабинетом. Выберите тариф и удобный период прямо на сайте." action={{ label: "Все тарифы", href: "/pricing" }} />
+        <PricingCatalog compact />
       </section>
 
       <section className="section-shell section-block" id="locations">

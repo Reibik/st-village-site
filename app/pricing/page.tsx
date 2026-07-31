@@ -4,4 +4,4 @@ import { PricingCatalog } from "@/src/features/pricing/pricing-catalog";
 
 export const metadata: Metadata = { title: "Тарифы", description: "Периоды и параметры цифрового сервиса ST VILLAGE." };
 
-export default function PricingPage() { return <><PageHero eyebrow="Тарифы" title="Выберите удобный период" text="Сравните формат использования, а актуальные условия и оформление откройте в отдельном личном кабинете." /><section className="section-shell page-content"><PricingCatalog /></section></>; }
+export default function PricingPage() { return <><PageHero eyebrow="Тарифы" title="Выберите удобный тариф" text="Актуальные цены и параметры поступают напрямую из личного кабинета. Выберите вариант и период, а оформление завершите в кабинете." /><section className="section-shell page-content"><PricingCatalog /></section></>; }

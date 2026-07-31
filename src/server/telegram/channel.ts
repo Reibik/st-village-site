@@ -106,7 +106,7 @@ export function extractTelegramPosts(html: string): TelegramPost[] {
       ...Array.from(fragment.matchAll(/<video[^>]+poster="([^"]+)"/gi), (match) => match[1]),
     ].filter(isAllowedTelegramMedia);
     const images = [...new Set(mediaUrls)].slice(0, 4).map((mediaUrl, index) => ({
-      url: `/api/news/media?url=${encodeURIComponent(decodeHtmlAttribute(mediaUrl))}`,
+      url: decodeHtmlAttribute(mediaUrl),
       alt: `Изображение ${index + 1} из публикации ST VILLAGE`,
     }));
 

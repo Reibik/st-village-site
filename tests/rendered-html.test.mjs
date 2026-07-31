@@ -147,18 +147,17 @@ test("Telegram news integration uses the public channel without exposing credent
   const channel = await readFile(new URL("../src/server/telegram/channel.ts", import.meta.url), "utf8");
   const feed = await readFile(new URL("../src/features/news/telegram-news-feed.tsx", import.meta.url), "utf8");
   const card = await readFile(new URL("../src/features/news/telegram-post-card.tsx", import.meta.url), "utf8");
-  const media = await readFile(new URL("../app/api/news/media/route.ts", import.meta.url), "utf8");
   const caddy = await readFile(new URL("../ops/vps/Caddyfile", import.meta.url), "utf8");
 
   assert.match(channel, /https:\/\/t\.me\/s\//);
   assert.match(channel, /data-post=/);
   assert.match(channel, /MAX_RESPONSE_BYTES/);
   assert.match(channel, /sanitizeTelegramHtml/);
-  assert.match(channel, /\/api\/news\/media/);
+  assert.match(channel, /decodeHtmlAttribute\(mediaUrl\)/);
   assert.match(route, /s-maxage=90/);
   assert.match(feed, /REFRESH_INTERVAL_MS/);
   assert.match(card, /dangerouslySetInnerHTML/);
-  assert.match(media, /ALLOWED_MEDIA_HOSTS/);
-  assert.doesNotMatch(caddy, /script-src[^\n]+telegram\.org|frame-src/);
-  assert.doesNotMatch(`${route}${channel}${feed}${card}${media}`, /BOT_TOKEN|Authorization:|api\.telegram\.org/);
+  assert.match(caddy, /img-src[^\n]+https:\/\/\*\.telesco\.pe/);
+  assert.doesNotMatch(caddy, /script-src[^;\n]+telegram\.org|frame-src/);
+  assert.doesNotMatch(`${route}${channel}${feed}${card}`, /BOT_TOKEN|Authorization:|api\.telegram\.org/);
 });

@@ -1,7 +1,7 @@
 "use client";
 
 /* Telegram media has dynamic signed URLs and dimensions, so it is intentionally
-   served through the same-origin proxy without the image optimizer. */
+   served directly from Telegram's allowlisted image CDN without the optimizer. */
 /* eslint-disable @next/next/no-img-element */
 
 interface TelegramPost {

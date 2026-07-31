@@ -38,7 +38,7 @@ test("all public pages render their expected content", async () => {
     ["/pricing", "Выберите удобный период"],
     ["/connect", "Happ и INCY — два основных приложения"],
     ["/status", "Состояние инфраструктуры"],
-    ["/news", "Обновления сервиса"],
+    ["/news", "Новости ST VILLAGE"],
     ["/support", "Помощь, когда она нужна"],
     ["/legal/privacy", "Политика конфиденциальности 🚀ST VILLAGE🚀"],
     ["/legal/terms", "Публичная оферта сервиса 🚀ST VILLAGE🚀"],
@@ -55,6 +55,10 @@ test("all public pages render their expected content", async () => {
       assert.match(html, /https:\/\/www\.happ\.su\/main/);
       assert.match(html, /https:\/\/incy\.cc\//);
       assert.match(html, /Только официальные версии/);
+    }
+    if (path === "/news") {
+      assert.match(html, /Автоматическое обновление/);
+      assert.match(html, /https:\/\/t\.me\/exitcloud_vpn/);
     }
     if (path.startsWith("/legal/")) {
       assert.match(html, /@st_village_vpn_bot/);
@@ -136,4 +140,19 @@ test("connection center uses official Happ and INCY downloads for every platform
   assert.match(wizard, /support_\$\{deviceId\.replace/);
   assert.match(wizard, /Типовые ошибки/);
   assert.match(wizard, /Добавьте подписку из кабинета/);
+});
+
+test("Telegram news integration uses the public channel without exposing credentials", async () => {
+  const route = await readFile(new URL("../app/api/news/route.ts", import.meta.url), "utf8");
+  const channel = await readFile(new URL("../src/server/telegram/channel.ts", import.meta.url), "utf8");
+  const feed = await readFile(new URL("../src/features/news/telegram-news-feed.tsx", import.meta.url), "utf8");
+  const embed = await readFile(new URL("../src/features/news/telegram-post-embed.tsx", import.meta.url), "utf8");
+
+  assert.match(channel, /https:\/\/t\.me\/s\//);
+  assert.match(channel, /data-post=/);
+  assert.match(channel, /MAX_RESPONSE_BYTES/);
+  assert.match(route, /s-maxage=90/);
+  assert.match(feed, /REFRESH_INTERVAL_MS/);
+  assert.match(embed, /telegram-widget\.js/);
+  assert.doesNotMatch(`${route}${channel}${feed}${embed}`, /BOT_TOKEN|Authorization:|api\.telegram\.org/);
 });

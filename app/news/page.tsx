@@ -1,6 +1,33 @@
 import type { Metadata } from "next";
 import { PageHero } from "@/src/components/page-hero";
+import { TELEGRAM_NEWS_URL } from "@/src/config/links";
+import { TelegramNewsFeed } from "@/src/features/news/telegram-news-feed";
 
-export const metadata: Metadata = { title: "Новости", description: "Новости, обновления и технические уведомления ST VILLAGE." };
+export const metadata: Metadata = {
+  title: "Новости",
+  description: "Свежие новости, обновления и технические уведомления из официального Telegram-канала ST VILLAGE.",
+};
 
-export default function NewsPage() { return <><PageHero eyebrow="Новости" title="Обновления сервиса" text="Важные сообщения, изменения продукта и технические уведомления будут собраны здесь." /><section className="section-shell page-content"><div className="category-tabs" aria-label="Категории новостей"><span className="active">Все</span><span>Важное</span><span>Обновления</span><span>Новости</span><span>Технические работы</span></div><div className="empty-state"><div className="empty-symbol">◫</div><h2>Публикаций пока нет</h2><p>Новости появятся после подключения редакционного модуля. Мы не создаём вымышленные обновления или даты.</p></div><style>{`.category-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px}.category-tabs span{padding:9px 14px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:12px}.category-tabs .active{background:var(--accent-soft);border-color:rgba(56,189,248,.24);color:var(--accent)}`}</style></section></>; }
+export default function NewsPage() {
+  return (
+    <>
+      <PageHero
+        eyebrow="Новости"
+        title="Новости ST VILLAGE"
+        text="Публикации из официального Telegram-канала появляются здесь автоматически — с изображениями, ссылками, цитатами и исходным форматированием."
+      />
+      <section className="section-shell page-content telegram-news-page">
+        <div className="telegram-news-toolbar">
+          <div>
+            <span className="live-indicator"><i /> Автоматическое обновление</span>
+            <p>Лента проверяет новые публикации каждые несколько минут.</p>
+          </div>
+          <a className="button button-secondary" href={TELEGRAM_NEWS_URL} target="_blank" rel="noreferrer">
+            Открыть канал <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+        <TelegramNewsFeed limit={8} />
+      </section>
+    </>
+  );
+}

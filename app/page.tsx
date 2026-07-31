@@ -5,6 +5,7 @@ import { CountryFlag } from "@/src/components/country-flag";
 import { FaqList } from "@/src/components/faq-list";
 import { SectionHeading } from "@/src/components/section-heading";
 import { PlatformStrip } from "@/src/components/platform-strip";
+import { TelegramNewsFeed } from "@/src/features/news/telegram-news-feed";
 import { homeFaqs, locations, plans } from "@/src/config/content";
 import { CABINET_URL, TELEGRAM_BOT_URL } from "@/src/config/links";
 
@@ -138,6 +139,11 @@ export default function Home() {
             </article>
           ))}
         </div>
+      </section>
+
+      <section className="section-shell section-block home-news-section" id="news">
+        <SectionHeading eyebrow="Из Telegram" title="Последние новости" text="Обновления сервиса, важные объявления и полезные материалы из официального канала ST VILLAGE." action={{ label: "Все новости", href: "/news" }} />
+        <TelegramNewsFeed limit={2} compact />
       </section>
 
       <section className="section-shell section-block faq-layout">

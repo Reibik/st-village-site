@@ -9,5 +9,5 @@ backend = systemd
 
 [sshd]
 enabled = true
-port = ssh
+port = 22222
 mode = aggressive

@@ -173,6 +173,8 @@ test("pricing is synchronized through the public Bedolaga landing API", async ()
   assert.match(integration, /DEFAULT_LANDING_SLUG = "st-village"/);
   assert.match(integration, /MAX_RESPONSE_BYTES/);
   assert.match(integration, /CACHE_TTL_MS/);
+  assert.match(integration, /BOOTSTRAP_SNAPSHOT/);
+  assert.match(integration, /periods: bootstrapPeriods/);
   assert.match(route, /s-maxage=300/);
   assert.match(catalog, /fetch\("\/api\/pricing"/);
   assert.match(catalog, /trafficLimitGb/);

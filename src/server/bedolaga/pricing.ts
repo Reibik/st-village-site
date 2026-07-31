@@ -37,6 +37,29 @@ type CachedSnapshot = {
   fetchedAt: number;
 };
 
+const bootstrapPeriods = (prices: Array<[number, number]>): PricingPeriod[] => prices.map(([days, priceKopeks]) => ({
+  days,
+  label: days === 30 ? "1 месяц" : days === 60 ? "2 месяца" : days === 90 ? "3 месяца" : `${days} дней`,
+  priceKopeks,
+  originalPriceKopeks: null,
+  discountPercent: null,
+}));
+
+// Last confirmed public catalog. It prevents an empty first render during a cabinet outage.
+const BOOTSTRAP_SNAPSHOT: PricingSnapshot = {
+  status: "ok",
+  title: "Тарифы ST VILLAGE",
+  updatedAt: "2026-07-31T04:00:00.000Z",
+  stale: true,
+  tariffs: [
+    { id: 1, name: "⚡️Базовый — Тариф", description: "Для личного использования на смартфоне, компьютере и планшете.", trafficLimitGb: 500, deviceLimit: 3, tierLevel: 1, isDaily: false, periods: bootstrapPeriods([[30, 14900], [60, 27900], [90, 39900]]) },
+    { id: 6, name: "⚡️Базовый — Безлимит", description: "Безлимитный вариант для личного использования.", trafficLimitGb: 0, deviceLimit: 3, tierLevel: 1, isDaily: false, periods: bootstrapPeriods([[30, 22900], [60, 42900], [90, 59900]]) },
+    { id: 2, name: "👩‍👩‍👦 Семейный — Тариф", description: "Для семьи: до 6 устройств с общим трафиком.", trafficLimitGb: 1000, deviceLimit: 6, tierLevel: 1, isDaily: false, periods: bootstrapPeriods([[30, 29900], [60, 54900], [90, 74900]]) },
+    { id: 7, name: "👩‍👩‍👦 Семейный — Безлимит", description: "Безлимитный вариант для семьи и нескольких устройств.", trafficLimitGb: 0, deviceLimit: 6, tierLevel: 1, isDaily: false, periods: bootstrapPeriods([[30, 39900], [60, 74900], [90, 99900]]) },
+    { id: 5, name: "💼 Командный", description: "Для небольшой команды или офиса.", trafficLimitGb: 0, deviceLimit: 10, tierLevel: 1, isDaily: false, periods: bootstrapPeriods([[30, 59900], [60, 109900], [90, 149900]]) },
+  ],
+};
+
 let cached: CachedSnapshot | null = null;
 let pending: Promise<PricingSnapshot> | null = null;
 
@@ -173,10 +196,11 @@ export async function getBedolagaPricing(): Promise<PricingSnapshot> {
 
   try {
     return await pending;
-  } catch (error) {
+  } catch {
     if (cached && now - cached.fetchedAt < STALE_TTL_MS) {
       return { ...cached.snapshot, stale: true };
     }
-    throw error;
+    cached = { snapshot: BOOTSTRAP_SNAPSHOT, fetchedAt: Date.now() };
+    return BOOTSTRAP_SNAPSHOT;
   }
 }

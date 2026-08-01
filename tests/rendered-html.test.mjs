@@ -260,7 +260,10 @@ test("search engines and social platforms receive complete page metadata", async
   assert.match(homeHtml, /https:\/\/schema\.org/);
   assert.match(homeHtml, /"@type":"WebSite"/);
   assert.match(homeHtml, /"@type":"Organization"/);
-  assert.match(homeHtml, /apple-touch-icon\.png/);
+  assert.match(homeHtml, /rel="shortcut icon" href="https:\/\/stvillage\.ru\/favicon\.ico\?v=2"/);
+  assert.match(homeHtml, /rel="icon" href="https:\/\/stvillage\.ru\/favicon\.ico\?v=2" sizes="any" type="image\/x-icon"/);
+  assert.match(homeHtml, /apple-touch-icon\.png\?v=2/);
+  assert.doesNotMatch(homeHtml, /favicon\.svg/);
 
   const sitemap = await worker.fetch(new Request("http://localhost/sitemap.xml"), env, context);
   const sitemapXml = await sitemap.text();
@@ -271,8 +274,8 @@ test("search engines and social platforms receive complete page metadata", async
   const manifest = await worker.fetch(new Request("http://localhost/manifest.webmanifest"), env, context);
   const manifestJson = await manifest.json();
   assert.equal(manifestJson.icons.length, 2);
-  assert.equal(manifestJson.icons[0].src, "/icon-192.png");
-  assert.equal(manifestJson.icons[1].src, "/icon-512.png");
+  assert.equal(manifestJson.icons[0].src, "/icon-192.png?v=2");
+  assert.equal(manifestJson.icons[1].src, "/icon-512.png?v=2");
 });
 
 test("v1.0.0 stable release safeguards are present", async () => {

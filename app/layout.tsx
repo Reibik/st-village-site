@@ -6,6 +6,8 @@ import { createPageMetadata, DEFAULT_DESCRIPTION, DEFAULT_TITLE, rootJsonLd, SIT
 import "./globals.css";
 
 const homeMetadata = createPageMetadata({ title: DEFAULT_TITLE, description: DEFAULT_DESCRIPTION, path: "/" });
+const BRAND_ICON_VERSION = "2";
+const faviconUrl = `/favicon.ico?v=${BRAND_ICON_VERSION}`;
 
 export const metadata: Metadata = {
   ...homeMetadata,
@@ -21,13 +23,12 @@ export const metadata: Metadata = {
   formatDetection: { email: false, address: false, telephone: false },
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/favicon.svg", type: "image/svg+xml" },
-      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
-      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
+      { url: faviconUrl, type: "image/x-icon", sizes: "any" },
+      { url: `/icon-192.png?v=${BRAND_ICON_VERSION}`, type: "image/png", sizes: "192x192" },
+      { url: `/icon-512.png?v=${BRAND_ICON_VERSION}`, type: "image/png", sizes: "512x512" },
     ],
-    shortcut: "/favicon.ico",
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    shortcut: faviconUrl,
+    apple: [{ url: `/apple-touch-icon.png?v=${BRAND_ICON_VERSION}`, sizes: "180x180", type: "image/png" }],
   },
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: "black-translucent" },

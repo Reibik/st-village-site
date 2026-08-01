@@ -135,7 +135,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="section-shell section-block">
+      <section className="section-shell section-block" id="getting-started">
         <SectionHeading eyebrow="Начало работы" title="Три понятных шага" text="Бот и кабинет уже связаны между собой, а сайт помогает быстро выбрать нужный маршрут." />
         <div className="steps-grid">
           {steps.map(([number, title, text], index) => (

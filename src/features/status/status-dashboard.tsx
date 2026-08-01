@@ -57,6 +57,9 @@ export function StatusDashboard() {
     return <div className="empty-state"><div className="empty-symbol">!</div><h2>Мониторинг временно недоступен</h2><p>Не удалось получить состояние сервисов. Попробуйте обновить страницу через несколько секунд.</p><button className="button button-secondary status-retry" onClick={() => void load(true)}>Повторить</button></div>;
   }
 
+  const operationalServices = snapshot.services.filter((service) => service.status === "operational").length;
+  const operationalLocations = snapshot.locations.filter((location) => location.status === "operational").length;
+
   return <>
     <div className="status-toolbar">
       <div><small>Общее состояние</small><StatusPill status={snapshot.status} /></div>
@@ -66,12 +69,18 @@ export function StatusDashboard() {
 
     {error && <div className="notice status-warning"><span>ⓘ</span><div><strong>Не удалось обновить данные</strong>Показано последнее успешно полученное состояние.</div></div>}
 
+    <div className="status-metrics" aria-label="Краткая сводка мониторинга">
+      <div><small>Работающие сервисы</small><strong>{operationalServices}<span>/{snapshot.services.length}</span></strong></div>
+      <div><small>Доступные локации</small><strong>{operationalLocations}<span>/{snapshot.locations.length}</span></strong></div>
+      <div><small>Интервал проверки</small><strong>{snapshot.refreshAfterSeconds}<span> сек</span></strong></div>
+    </div>
+
     <div className="status-service-grid">
       {snapshot.services.map((service) => <article className="status-service-card" key={service.id}>
         <div className="status-service-head"><StatusPill status={service.status} /><span className="latency">{service.latencyMs === null ? "—" : `${service.latencyMs} мс`}</span></div>
         <h2>{service.name}</h2>
         <p>{service.description}</p>
-        <small>{service.message}</small>
+        <small><span>{service.message}</span><time dateTime={service.checkedAt}>Проверено в {formatTime(service.checkedAt)}</time></small>
       </article>)}
     </div>
 
@@ -79,7 +88,7 @@ export function StatusDashboard() {
     <div className="location-list">
       {snapshot.locations.map((location) => <div className="location-row" key={location.id}>
         <div className="location-name"><CountryFlag code={location.code} /><div><strong>{location.name}</strong><small>{location.region}</small></div></div>
-        <div className="location-status"><StatusPill status={location.status} /><small>{location.message}</small></div>
+        <div className="location-status"><StatusPill status={location.status} /><small><span>{location.message}</span><time dateTime={location.checkedAt}>Проверено в {formatTime(location.checkedAt)}</time></small></div>
       </div>)}
     </div>
 

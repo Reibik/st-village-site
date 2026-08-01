@@ -246,6 +246,26 @@ test("home page uses the cabinet preview and clearly separated onboarding steps"
   assert.doesNotMatch(html, /class="control-panel"/);
 });
 
+test("priority dev improvements include private QR shortcuts and richer status details", async () => {
+  const homeResponse = await worker.fetch(new Request("http://localhost/", { headers: { accept: "text/html" } }), env, context);
+  const homeHtml = await homeResponse.text();
+  const ctaSource = await readFile(new URL("../src/components/cta-panel.tsx", import.meta.url), "utf8");
+  const statusSource = await readFile(new URL("../src/features/status/status-dashboard.tsx", import.meta.url), "utf8");
+  const checklist = await readFile(new URL("../SITE_IMPROVEMENT_CHECKLIST.md", import.meta.url), "utf8");
+  const cabinetQr = await stat(new URL("../public/qr-cabinet.png", import.meta.url));
+  const telegramQr = await stat(new URL("../public/qr-telegram-bot.png", import.meta.url));
+
+  assert.match(homeHtml, /\/qr-cabinet\.png/);
+  assert.match(homeHtml, /\/qr-telegram-bot\.png/);
+  assert.match(ctaSource, /Быстрые переходы по QR-коду/);
+  assert.match(statusSource, /className="status-metrics"/);
+  assert.match(statusSource, /Проверено в/);
+  assert.match(checklist, /## Уже реализовано/);
+  assert.match(checklist, /\[x\] Автономные QR-коды/);
+  assert.ok(cabinetQr.size > 1_000 && cabinetQr.size < 20_000);
+  assert.ok(telegramQr.size > 1_000 && telegramQr.size < 20_000);
+});
+
 test("search engines and social platforms receive complete page metadata", async () => {
   const cases = [
     ["/", "https://stvillage.ru/", "ST VILLAGE — защищённое подключение без лишней сложности"],

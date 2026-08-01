@@ -131,3 +131,5 @@ fail2ban-client set sshd delignoreip 62.183.21.227 >/dev/null 2>&1 || true
 rm -rf -- "$stage"
 
 printf 'ST VILLAGE dev stand installation started.\n'
+trap - EXIT
+rm -f -- "$install_log"

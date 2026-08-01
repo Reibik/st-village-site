@@ -109,8 +109,8 @@ export default function Home() {
               <strong>ST</strong>
             </span>
             <picture className="cabinet-preview-picture">
-              <source srcSet="/cabinet-dashboard-preview.webp" type="image/webp" />
-              <Image src="/cabinet-dashboard-preview.png" alt="Миниатюра личного кабинета ST VILLAGE с активной подпиской и устройствами" width="1200" height="800" unoptimized sizes="(max-width: 980px) 92vw, 620px" />
+              <source srcSet="/cabinet-dashboard-preview.webp?v=2" type="image/webp" />
+              <Image src="/cabinet-dashboard-preview.png?v=2" alt="Миниатюра личного кабинета ST VILLAGE с активной семейной подпиской" width="1200" height="800" unoptimized sizes="(max-width: 980px) 92vw, 620px" />
             </picture>
             <span className="cabinet-preview-footer"><span>Демонстрационный интерфейс</span><strong>Открыть кабинет <i aria-hidden="true">↗</i></strong></span>
           </span>

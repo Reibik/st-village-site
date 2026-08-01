@@ -236,8 +236,8 @@ test("home page uses the cabinet preview and clearly separated onboarding steps"
   const response = await worker.fetch(new Request("http://localhost/", { headers: { accept: "text/html" } }), env, context);
   const html = await response.text();
 
-  assert.match(html, /cabinet-dashboard-preview\.webp/);
-  assert.match(html, /cabinet-dashboard-preview\.png/);
+  assert.match(html, /cabinet-dashboard-preview\.webp\?v=2/);
+  assert.match(html, /cabinet-dashboard-preview\.png\?v=2/);
   assert.match(html, /Демонстрационный интерфейс/);
   assert.match(html, /class="step-number"/);
   const plainText = html.replace(/<!--.*?-->/g, "").replace(/<[^>]+>/g, " ");

@@ -29,6 +29,9 @@ test("server-renders the ST VILLAGE public home page", async () => {
   assert.match(html, /https:\/\/t\.me\/st_village_vpn_bot/);
   assert.match(html, /class="footer-version"[^>]*>v(?:<!-- -->)?1\.0\.0<\/a>/);
   assert.match(html, /href="\/release"/);
+  assert.match(html, /Попробуйте ST VILLAGE перед оплатой/);
+  assert.match(html, /5 ГБ/);
+  assert.match(html, /Белые списки — только на платных тарифах/);
   assert.match(html, /src="\/brand-emblem\.png"/);
   assert.doesNotMatch(html, /_vinext\/image/);
   assert.doesNotMatch(html, /— мс/);
@@ -190,6 +193,26 @@ test("pricing is synchronized through the public Bedolaga landing API", async ()
   assert.match(home, /<PricingCatalog compact/);
   assert.match(exampleEnv, /BEDOLAGA_API_URL=https:\/\/cabinet\.stvillage\.ru\/api/);
   assert.doesNotMatch(`${route}${integration}${catalog}`, /X-API-Key|BOT_TOKEN|JWT|Authorization:/i);
+});
+
+test("trial period is prominent and explains every limitation", async () => {
+  for (const path of ["/", "/pricing"]) {
+    const response = await worker.fetch(new Request(`http://localhost${path}`, { headers: { accept: "text/html" } }), env, context);
+    assert.equal(response.status, 200, path);
+    const html = await response.text();
+    assert.match(html, /Пробный период/, path);
+    assert.match(html, />1<\/strong><span>день доступа/, path);
+    assert.match(html, />5 ГБ<\/strong><span>трафика/, path);
+    assert.match(html, />1<\/strong><span>устройство/, path);
+    assert.match(html, /Германия/, path);
+    assert.match(html, /Польша/, path);
+    assert.match(html, /Швеция/, path);
+    assert.match(html, /flag-de/, path);
+    assert.match(html, /flag-pl/, path);
+    assert.match(html, /flag-se/, path);
+    assert.match(html, /Белые списки не входят в пробный период/, path);
+    assert.match(html, /https:\/\/cabinet\.stvillage\.ru/, path);
+  }
 });
 
 test("search engines and social platforms receive complete page metadata", async () => {

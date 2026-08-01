@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import test from "node:test";
 
 process.env.STATUS_PROBE_TIMEOUT_MS = "500";
@@ -32,6 +32,8 @@ test("server-renders the ST VILLAGE public home page", async () => {
   assert.match(html, /Попробуйте ST VILLAGE перед оплатой/);
   assert.match(html, /5 ГБ/);
   assert.match(html, /Белые списки — только на платных тарифах/);
+  assert.match(html, /<source srcSet="\/brand-emblem\.avif" type="image\/avif"/);
+  assert.match(html, /<source srcSet="\/brand-emblem\.webp" type="image\/webp"/);
   assert.match(html, /src="\/brand-emblem\.png"/);
   assert.doesNotMatch(html, /_vinext\/image/);
   assert.doesNotMatch(html, /— мс/);
@@ -213,6 +215,21 @@ test("trial period is prominent and explains every limitation", async () => {
     assert.match(html, /Белые списки не входят в пробный период/, path);
     assert.match(html, /https:\/\/cabinet\.stvillage\.ru/, path);
   }
+});
+
+test("hero artwork prefers compact modern formats with a PNG fallback", async () => {
+  const source = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const [png, webp, avif] = await Promise.all([
+    stat(new URL("../public/brand-emblem.png", import.meta.url)),
+    stat(new URL("../public/brand-emblem.webp", import.meta.url)),
+    stat(new URL("../public/brand-emblem.avif", import.meta.url)),
+  ]);
+
+  assert.ok(source.indexOf("brand-emblem.avif") < source.indexOf("brand-emblem.webp"));
+  assert.ok(source.indexOf("brand-emblem.webp") < source.indexOf("brand-emblem.png"));
+  assert.ok(avif.size < webp.size);
+  assert.ok(webp.size < png.size / 5);
+  assert.ok(avif.size < 150_000);
 });
 
 test("search engines and social platforms receive complete page metadata", async () => {

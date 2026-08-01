@@ -56,7 +56,11 @@ export default function Home() {
           <div className="hero-orbit orbit-one" />
           <div className="hero-orbit orbit-two" />
           <div className="logo-halo" />
-          <Image src="/brand-emblem.png" alt="Эмблема ST VILLAGE с фирменным роботом" width="720" height="720" priority unoptimized sizes="(max-width: 680px) 92vw, 500px" />
+          <picture className="hero-emblem-picture">
+            <source srcSet="/brand-emblem.avif" type="image/avif" />
+            <source srcSet="/brand-emblem.webp" type="image/webp" />
+            <Image src="/brand-emblem.png" alt="Эмблема ST VILLAGE с фирменным роботом" width="1080" height="1080" loading="eager" fetchPriority="high" unoptimized sizes="(max-width: 680px) 88vw, 480px" />
+          </picture>
           <div className="signal-card signal-card-top"><span className="signal-icon">◎</span><div><small>Состояние</small><strong>Мониторинг активен</strong></div></div>
           <div className="signal-card signal-card-bottom"><span className="signal-icon">⌁</span><div><small>Подключение</small><strong>Happ и INCY</strong></div></div>
         </div>

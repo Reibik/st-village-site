@@ -314,6 +314,7 @@ test("the dev stand is isolated, protected, and automatically updated", async ()
   const deployTimer = await readFile(new URL("../ops/vps/st-village-dev-deploy.timer", import.meta.url), "utf8");
   const verify = await readFile(new URL("../ops/vps/verify-dev.sh", import.meta.url), "utf8");
   const caddyOverride = await readFile(new URL("../ops/vps/caddy-st-village-dev.conf", import.meta.url), "utf8");
+  const installer = await readFile(new URL("../ops/vps/install-dev-stand.sh", import.meta.url), "utf8");
 
   assert.match(caddy, /dev\.stvillage\.ru/);
   assert.match(caddy, /basic_auth/);
@@ -332,4 +333,10 @@ test("the dev stand is isolated, protected, and automatically updated", async ()
   assert.match(verify, /unauthorized_status/);
   assert.match(verify, /Disallow: \//);
   assert.match(caddyOverride, /EnvironmentFile=\/etc\/caddy\/st-village-dev\.env/);
+  assert.match(installer, /caddy adapt/);
+  assert.match(installer, /Caddyfile\.pre-dev/);
+  assert.match(installer, /openssl rand -hex 16/);
+  assert.match(installer, /caddy hash-password --algorithm bcrypt/);
+  assert.match(installer, /\.st-village-dev-credentials/);
+  assert.match(installer, /systemctl start --no-block st-village-dev-deploy\.service/);
 });

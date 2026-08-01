@@ -291,6 +291,7 @@ test("v1.0.0 stable release safeguards are present", async () => {
   assert.match(packageJson.scripts["release:check"], /lint.*typecheck.*build.*rendered-html/s);
   assert.match(workflow, /pnpm release:check/);
   assert.match(workflow, /permissions:\s+contents: read/s);
+  assert.match(workflow, /branches: \[main, dev\]/);
   assert.match(caddy, /X-Robots-Tag "noindex, nofollow, nosnippet"/);
   assert.match(caddy, /Cross-Origin-Opener-Policy "same-origin-allow-popups"/);
   assert.match(caddy, /X-Permitted-Cross-Domain-Policies "none"/);

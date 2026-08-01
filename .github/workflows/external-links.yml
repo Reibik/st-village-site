@@ -1,0 +1,37 @@
+name: External client links
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 3 * * *"
+  push:
+    branches: [main, dev]
+    paths:
+      - "src/config/connection-apps.ts"
+      - "scripts/check-client-links.mjs"
+      - ".github/workflows/external-links.yml"
+  pull_request:
+    branches: [main, dev]
+    paths:
+      - "src/config/connection-apps.ts"
+      - "scripts/check-client-links.mjs"
+      - ".github/workflows/external-links.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  check-links:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.13.0
+
+      - name: Check official Happ and INCY links
+        run: node scripts/check-client-links.mjs

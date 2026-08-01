@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { PageHero } from "@/src/components/page-hero";
 import { TELEGRAM_NEWS_URL } from "@/src/config/links";
 import { createPageMetadata } from "@/src/config/seo";
+import { newsCollectionJsonLd, serializeJsonLd } from "@/src/config/structured-data";
 import { TelegramNewsFeed } from "@/src/features/news/telegram-news-feed";
 
 export const metadata: Metadata = createPageMetadata({
@@ -13,6 +14,7 @@ export const metadata: Metadata = createPageMetadata({
 export default function NewsPage() {
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(newsCollectionJsonLd) }} />
       <PageHero
         eyebrow="Новости"
         title="Новости ST VILLAGE"

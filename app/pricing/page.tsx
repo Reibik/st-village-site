@@ -3,6 +3,7 @@ import { PageHero } from "@/src/components/page-hero";
 import { TrialOffer } from "@/src/components/trial-offer";
 import { createPageMetadata } from "@/src/config/seo";
 import { PricingCatalog } from "@/src/features/pricing/pricing-catalog";
+import { getBootstrapPricing } from "@/src/server/bedolaga/pricing";
 
 export const metadata: Metadata = createPageMetadata({
   title: "Тарифы",
@@ -11,6 +12,7 @@ export const metadata: Metadata = createPageMetadata({
 });
 
 export default function PricingPage() {
+  const initialPricing = getBootstrapPricing();
   return <>
     <PageHero
       eyebrow="Тарифы"
@@ -19,7 +21,7 @@ export default function PricingPage() {
     />
     <section className="section-shell page-content pricing-page-content">
       <TrialOffer compact />
-      <PricingCatalog />
+      <PricingCatalog initialSnapshot={initialPricing} />
     </section>
   </>;
 }

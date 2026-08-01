@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { CABINET_URL, TELEGRAM_BOT_URL } from "@/src/config/links";
+import { createPricingJsonLd, serializeJsonLd } from "@/src/config/structured-data";
 
 type PricingPeriod = {
   days: number;
@@ -95,8 +96,8 @@ function PricingSkeleton({ compact }: { compact: boolean }) {
   );
 }
 
-export function PricingCatalog({ compact = false }: { compact?: boolean }) {
-  const [snapshot, setSnapshot] = useState<PricingSnapshot | null>(null);
+export function PricingCatalog({ compact = false, initialSnapshot = null }: { compact?: boolean; initialSnapshot?: PricingSnapshot | null }) {
+  const [snapshot, setSnapshot] = useState<PricingSnapshot | null>(initialSnapshot);
   const [failed, setFailed] = useState(false);
 
   const load = useCallback(async () => {
@@ -150,6 +151,7 @@ export function PricingCatalog({ compact = false }: { compact?: boolean }) {
   const tariffs = compact ? snapshot.tariffs.slice(0, 3) : snapshot.tariffs;
   return (
     <>
+      {!compact && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(createPricingJsonLd(snapshot.tariffs)) }} />}
       <div className="pricing-sync" role="status">
         <span className="status-dot" aria-hidden="true" />
         <span>{snapshot.stale ? "Показаны последние сохранённые данные" : "Цены синхронизированы с личным кабинетом"}</span>

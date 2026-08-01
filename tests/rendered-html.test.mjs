@@ -312,6 +312,54 @@ test("search engines and social platforms receive complete page metadata", async
   assert.equal(manifestJson.icons[1].src, "/icon-512.png?v=2");
 });
 
+test("FAQ, pricing and news expose extended Schema.org data", async () => {
+  const pages = await Promise.all(["/", "/pricing", "/news"].map(async (path) => {
+    const response = await worker.fetch(new Request(`http://localhost${path}`, { headers: { accept: "text/html" } }), env, context);
+    assert.equal(response.status, 200, path);
+    return response.text();
+  }));
+  const [home, pricing, news] = pages;
+  const newsCard = await readFile(new URL("../src/features/news/telegram-post-card.tsx", import.meta.url), "utf8");
+
+  assert.match(home, /"@type":"FAQPage"/);
+  assert.match(home, /"@type":"Question"/);
+  assert.match(home, /"@type":"Answer"/);
+  assert.match(pricing, /"@type":"OfferCatalog"/);
+  assert.match(pricing, /"@type":"Offer"/);
+  assert.match(pricing, /"priceCurrency":"RUB"/);
+  assert.match(news, /"@type":"CollectionPage"/);
+  assert.match(newsCard, /createNewsArticleJsonLd/);
+  assert.match(newsCard, /type="application\/ld\+json"/);
+});
+
+test("official client links and visual baselines are checked automatically", async () => {
+  const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+  const linkScript = await readFile(new URL("../scripts/check-client-links.mjs", import.meta.url), "utf8");
+  const linkWorkflow = await readFile(new URL("../.github/workflows/external-links.yml", import.meta.url), "utf8");
+  const visualWorkflow = await readFile(new URL("../.github/workflows/visual-regression.yml", import.meta.url), "utf8");
+  const playwrightConfig = await readFile(new URL("../playwright.config.ts", import.meta.url), "utf8");
+  const visualSpec = await readFile(new URL("../tests/visual/public-pages.spec.ts", import.meta.url), "utf8");
+  const checklist = await readFile(new URL("../SITE_IMPROVEMENT_CHECKLIST.md", import.meta.url), "utf8");
+
+  assert.equal(packageJson.scripts["test:links"], "node scripts/check-client-links.mjs");
+  assert.match(packageJson.scripts["test:visual"], /playwright test/);
+  assert.match(packageJson.scripts["test:visual:update"], /--update-snapshots/);
+  assert.match(linkScript, /src\/config\/connection-apps\.ts/);
+  assert.match(linkScript, /HEAD/);
+  assert.match(linkScript, /GET/);
+  assert.match(linkWorkflow, /schedule:/);
+  assert.match(linkWorkflow, /node scripts\/check-client-links\.mjs/);
+  assert.match(visualWorkflow, /pnpm test:visual/);
+  assert.match(visualWorkflow, /playwright-report/);
+  assert.match(playwrightConfig, /name: "desktop"/);
+  assert.match(playwrightConfig, /name: "mobile"/);
+  assert.match(visualSpec, /home-hero\.png/);
+  assert.match(visualSpec, /pricing-page\.png/);
+  assert.match(checklist, /\[x\] Расширенная Schema\.org-разметка тарифов, FAQ и новостей/);
+  assert.match(checklist, /\[x\] Автоматическая проверка внешних ссылок Happ и INCY/);
+  assert.match(checklist, /\[x\] Визуальные регрессионные тесты для desktop и mobile/);
+});
+
 test("v1.0.0 stable release safeguards are present", async () => {
   const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
   const workflow = await readFile(new URL("../.github/workflows/quality.yml", import.meta.url), "utf8");

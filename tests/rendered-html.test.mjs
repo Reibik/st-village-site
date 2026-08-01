@@ -232,6 +232,20 @@ test("hero artwork prefers compact modern formats with a PNG fallback", async ()
   assert.ok(avif.size < 150_000);
 });
 
+test("home page uses the cabinet preview and clearly separated onboarding steps", async () => {
+  const response = await worker.fetch(new Request("http://localhost/", { headers: { accept: "text/html" } }), env, context);
+  const html = await response.text();
+
+  assert.match(html, /cabinet-dashboard-preview\.webp/);
+  assert.match(html, /cabinet-dashboard-preview\.png/);
+  assert.match(html, /Демонстрационный интерфейс/);
+  assert.match(html, /class="step-number"/);
+  const plainText = html.replace(/<!--.*?-->/g, "").replace(/<[^>]+>/g, " ");
+  assert.match(plainText, /Шаг\s+1\s+из\s+3/);
+  assert.match(html, /class="step-connector"/);
+  assert.doesNotMatch(html, /class="control-panel"/);
+});
+
 test("search engines and social platforms receive complete page metadata", async () => {
   const cases = [
     ["/", "https://stvillage.ru/", "ST VILLAGE — защищённое подключение без лишней сложности"],

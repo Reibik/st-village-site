@@ -99,16 +99,23 @@ export default function Home() {
           </ul>
           <a className="text-link" href={CABINET_URL} target="_blank" rel="noreferrer">Перейти в кабинет <span>↗</span></a>
         </div>
-        <div className="control-panel" aria-label="Пример интерфейса управления">
-          <div className="panel-bar"><span>Клиентский маршрут</span><span className="panel-badge">Кабинет + Telegram</span></div>
-          <div className="connection-card">
-            <div className="connection-head"><div><small>Личный кабинет</small><strong>cabinet.stvillage.ru</strong></div><span className="pulse-ring" /></div>
-            <div className="connection-line"><span>Связь с сервисом</span><strong>Telegram-бот</strong></div>
-            <div className="connection-line"><span>Переход с сайта</span><strong>В один клик</strong></div>
-            <div className="client-links"><a href={CABINET_URL} target="_blank" rel="noreferrer">Открыть кабинет ↗</a><a href={TELEGRAM_BOT_URL} target="_blank" rel="noreferrer">Открыть бота ↗</a></div>
-          </div>
-          <div className="mini-grid"><div><span>⌘</span><small>Кабинет</small></div><div><span>↗</span><small>Telegram</small></div><div><span>?</span><small>Инструкции</small></div></div>
-        </div>
+        <a className="cabinet-preview" href={CABINET_URL} target="_blank" rel="noreferrer" aria-label="Открыть личный кабинет ST VILLAGE">
+          <span className="cabinet-preview-glow" aria-hidden="true" />
+          <span className="cabinet-preview-chip cabinet-preview-chip-live"><span className="status-dot" /> Кабинет доступен</span>
+          <span className="cabinet-preview-frame">
+            <span className="cabinet-preview-toolbar" aria-hidden="true">
+              <span className="cabinet-preview-dots"><i /><i /><i /></span>
+              <span>cabinet.stvillage.ru</span>
+              <strong>ST</strong>
+            </span>
+            <picture className="cabinet-preview-picture">
+              <source srcSet="/cabinet-dashboard-preview.webp" type="image/webp" />
+              <Image src="/cabinet-dashboard-preview.png" alt="Миниатюра личного кабинета ST VILLAGE с активной подпиской и устройствами" width="1200" height="800" unoptimized sizes="(max-width: 980px) 92vw, 620px" />
+            </picture>
+            <span className="cabinet-preview-footer"><span>Демонстрационный интерфейс</span><strong>Открыть кабинет <i aria-hidden="true">↗</i></strong></span>
+          </span>
+          <span className="cabinet-preview-chip cabinet-preview-chip-secure">◆ Защищённое управление</span>
+        </a>
       </section>
 
       <section className="section-shell section-block" id="pricing">
@@ -133,7 +140,9 @@ export default function Home() {
         <div className="steps-grid">
           {steps.map(([number, title, text], index) => (
             <article className="step-card" key={number}>
-              <span>{number}</span><h3>{title}</h3><p>{text}</p>{index < 2 && <i aria-hidden="true">→</i>}
+              <div className="step-card-top"><span className="step-number">{number}</span><small>Шаг {index + 1} из {steps.length}</small></div>
+              <div className="step-card-copy"><h3>{title}</h3><p>{text}</p></div>
+              {index < steps.length - 1 && <span className="step-connector" aria-hidden="true">→</span>}
             </article>
           ))}
         </div>

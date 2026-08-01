@@ -1,0 +1,13 @@
+[Unit]
+Description=Check GitHub dev branch for ST VILLAGE updates
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+RandomizedDelaySec=10s
+Persistent=true
+Unit=st-village-dev-deploy.service
+
+[Install]
+WantedBy=timers.target
+

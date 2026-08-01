@@ -51,6 +51,42 @@ stvillage.ru {
     }
 }
 
+dev.stvillage.ru {
+    encode zstd gzip
+
+    route {
+        import security_headers
+
+        header {
+            Cache-Control "no-store"
+            X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex"
+            X-ST-Village-Environment "development"
+        }
+
+        basic_auth {
+            {$ST_VILLAGE_DEV_AUTH_USER} {$ST_VILLAGE_DEV_AUTH_HASH}
+        }
+
+        @robots path /robots.txt
+        respond @robots "User-agent: *\nDisallow: /\n" 200
+
+        reverse_proxy 127.0.0.1:3001 {
+            transport http {
+                dial_timeout 5s
+                response_header_timeout 30s
+            }
+        }
+    }
+
+    log {
+        output file /var/log/caddy/st-village-dev.log {
+            roll_size 10mb
+            roll_keep 5
+            roll_keep_for 168h
+        }
+    }
+}
+
 www.stvillage.ru {
     redir https://stvillage.ru{uri} permanent
 }

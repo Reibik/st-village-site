@@ -306,3 +306,30 @@ test("v1.0.0 stable release safeguards are present", async () => {
   assert.match(worker, /X-ST-Village-Channel/);
   assert.match(changelog, /1\.0\.0 — стабильный запуск/);
 });
+
+test("the dev stand is isolated, protected, and automatically updated", async () => {
+  const caddy = await readFile(new URL("../ops/vps/Caddyfile", import.meta.url), "utf8");
+  const deploy = await readFile(new URL("../ops/vps/deploy-dev.sh", import.meta.url), "utf8");
+  const siteService = await readFile(new URL("../ops/vps/st-village-dev-site.service", import.meta.url), "utf8");
+  const deployTimer = await readFile(new URL("../ops/vps/st-village-dev-deploy.timer", import.meta.url), "utf8");
+  const verify = await readFile(new URL("../ops/vps/verify-dev.sh", import.meta.url), "utf8");
+  const caddyOverride = await readFile(new URL("../ops/vps/caddy-st-village-dev.conf", import.meta.url), "utf8");
+
+  assert.match(caddy, /dev\.stvillage\.ru/);
+  assert.match(caddy, /basic_auth/);
+  assert.match(caddy, /ST_VILLAGE_DEV_AUTH_HASH/);
+  assert.match(caddy, /X-Robots-Tag "noindex, nofollow, noarchive, nosnippet, noimageindex"/);
+  assert.match(caddy, /respond @robots "User-agent: \*\\nDisallow: \/\\n" 200/);
+  assert.match(caddy, /reverse_proxy 127\.0\.0\.1:3001/);
+
+  assert.match(deploy, /app_root="\/opt\/st-village-dev"/);
+  assert.match(deploy, /branch="dev"/);
+  assert.match(deploy, /127\.0\.0\.1:3001\/api\/health/);
+  assert.match(deploy, /systemctl restart st-village-dev-site\.service/);
+  assert.match(siteService, /PORT=3001/);
+  assert.match(siteService, /WorkingDirectory=\/opt\/st-village-dev\/current/);
+  assert.match(deployTimer, /OnUnitActiveSec=1min/);
+  assert.match(verify, /unauthorized_status/);
+  assert.match(verify, /Disallow: \//);
+  assert.match(caddyOverride, /EnvironmentFile=\/etc\/caddy\/st-village-dev\.env/);
+});

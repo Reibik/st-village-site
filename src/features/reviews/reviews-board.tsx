@@ -25,28 +25,34 @@ export function ReviewsBoard() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const formElement = event.currentTarget;
     setState("sending");
-    setMessage("");
-    const form = new FormData(event.currentTarget);
-    const response = await fetch("/api/reviews", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        displayName: form.get("displayName"), rating: Number(form.get("rating")),
-        text: form.get("text"), website: form.get("website"),
-      }),
-    });
-    const payload = await response.json() as { error?: string; stored?: boolean };
-    if (!response.ok) {
+    setMessage("Отправляем отзыв на модерацию…");
+    const form = new FormData(formElement);
+    try {
+      const response = await fetch("/api/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          displayName: form.get("displayName"), rating: Number(form.get("rating")),
+          text: form.get("text"), website: form.get("website"),
+        }),
+      });
+      const payload = await response.json().catch(() => ({})) as { error?: string; stored?: boolean };
+      if (!response.ok) {
+        setState("error");
+        setMessage(payload.error || "Не удалось отправить отзыв. Попробуйте ещё раз.");
+        return;
+      }
+      formElement.reset();
+      setState("sent");
+      setMessage(payload.stored === false
+        ? "Форма работает, но постоянное хранилище тестового стенда временно недоступно. Попробуйте позднее."
+        : "Спасибо! Отзыв отправлен на модерацию и появится после проверки.");
+    } catch {
       setState("error");
-      setMessage(payload.error || "Не удалось отправить отзыв.");
-      return;
+      setMessage("Не удалось связаться с сервером. Проверьте соединение и попробуйте ещё раз.");
     }
-    event.currentTarget.reset();
-    setState("sent");
-    setMessage(payload.stored === false
-      ? "Форма работает, но постоянное хранилище тестового стенда ещё подключается. Попробуйте после следующего обновления."
-      : "Спасибо! Отзыв отправлен на модерацию и появится после проверки.");
   }
 
   return <div className="reviews-layout">
@@ -70,9 +76,8 @@ export function ReviewsBoard() {
         <label className="review-honeypot" aria-hidden="true">Ваш сайт<input name="website" tabIndex={-1} autoComplete="off" /></label>
         <label className="review-consent"><input type="checkbox" required /> <span>Разрешаю опубликовать этот текст и указанное имя после модерации.</span></label>
         <button className="button button-primary" type="submit" disabled={state === "sending"}>{state === "sending" ? "Отправляем…" : "Отправить на модерацию"}</button>
-        {message && <p className={`review-message review-message-${state}`} role="status">{message}</p>}
+        {message && <p className={`review-message review-message-${state}`} role={state === "error" ? "alert" : "status"} aria-live="polite">{message}</p>}
       </form>
     </aside>
   </div>;
 }
-

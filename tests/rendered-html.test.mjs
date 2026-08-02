@@ -421,9 +421,14 @@ test("reviews are moderated and the checklist contains no unfinished items", asy
   assert.equal(invalid.status, 400);
 
   const reviewRoute = await readFile(new URL("../app/api/reviews/route.ts", import.meta.url), "utf8");
+  const reviewBoard = await readFile(new URL("../src/features/reviews/reviews-board.tsx", import.meta.url), "utf8");
   const checklist = await readFile(new URL("../SITE_IMPROVEMENT_CHECKLIST.md", import.meta.url), "utf8");
   assert.match(reviewRoute, /REVIEWS_ADMIN_TOKEN/);
   assert.match(reviewRoute, /pendingModeration/);
+  assert.match(reviewBoard, /const formElement = event\.currentTarget/);
+  assert.match(reviewBoard, /formElement\.reset\(\)/);
+  assert.match(reviewBoard, /response\.json\(\)\.catch/);
+  assert.match(reviewBoard, /role=\{state === "error" \? "alert" : "status"\}/);
   assert.doesNotMatch(checklist, /- \[ \]/);
   for (const item of ["История доступности", "Лента инцидентов", "Приватная аналитика", "Core Web Vitals"]) {
     assert.match(checklist, new RegExp(`\\[x\\].*${item}`));

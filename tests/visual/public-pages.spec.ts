@@ -29,7 +29,9 @@ async function prepare(page: Page) {
       { id: "asia", label: "Азия", country: "JP", city: "Tokyo", status: "operational", latencyMs: 1398, checkedAt: "2026-08-02T04:00:00.000Z" },
     ],
   } }));
-  await page.route("**/api/reviews", (route) => route.fulfill({ json: { reviews: [] } }));
+  await page.route("**/api/reviews", (route) => route.fulfill({ json: route.request().method() === "POST"
+    ? { accepted: true, pendingModeration: true, stored: true }
+    : { reviews: [] } }));
   await page.route("**/api/version", (route) => route.fulfill({
     json: { version: "1.0.0", channel: "stable" },
   }));
@@ -88,4 +90,15 @@ test("страница отзывов", async ({ page }) => {
   await expect(page.locator(".review-form-card")).toBeVisible();
   await settle(page);
   await expect(board).toHaveScreenshot("reviews-page.png");
+});
+
+test("форма отзыва показывает результат отправки", async ({ page }) => {
+  await prepare(page);
+  await page.goto("/reviews", { waitUntil: "networkidle" });
+  await page.getByLabel("Как вас представить").fill("Тест");
+  await page.getByLabel("Ваш отзыв").fill("Тестовый отзыв проверяет успешную отправку формы на модерацию.");
+  await page.locator(".review-consent input").check();
+  await page.getByRole("button", { name: "Отправить на модерацию" }).click();
+  await expect(page.getByRole("status")).toContainText("Отзыв отправлен на модерацию");
+  await expect(page.getByLabel("Как вас представить")).toHaveValue("");
 });

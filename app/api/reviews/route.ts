@@ -3,7 +3,8 @@ import { getApprovedReviews, getPendingReviews, moderateReview, submitReview } f
 
 function hasAdminAccess(request: Request) {
   const configuredToken = process.env.REVIEWS_ADMIN_TOKEN?.trim();
-  const suppliedToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  const suppliedToken = request.headers.get("x-st-village-admin-token")?.trim()
+    || request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   return Boolean(configuredToken && suppliedToken === configuredToken);
 }
 

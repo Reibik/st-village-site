@@ -19,7 +19,7 @@ export function ReviewsModeration() {
     try {
       const response = await fetch("/api/reviews?status=pending", {
         cache: "no-store",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { "X-ST-Village-Admin-Token": token },
       });
       if (!response.ok) {
         setState("error");
@@ -41,7 +41,7 @@ export function ReviewsModeration() {
     try {
       const response = await fetch("/api/reviews", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: { "Content-Type": "application/json", "X-ST-Village-Admin-Token": token },
         body: JSON.stringify({ id, status }),
       });
       const payload = await response.json().catch(() => ({})) as { updated?: boolean; error?: string };

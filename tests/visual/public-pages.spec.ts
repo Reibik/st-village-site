@@ -115,9 +115,17 @@ test("модератор может опубликовать ожидающий 
   await prepare(page);
   await page.goto("/reviews/moderation", { waitUntil: "networkidle" });
   await page.getByLabel("Токен модератора").fill("test-admin-token");
+  const pendingRequestPromise = page.waitForRequest((request) => request.url().includes("status=pending"));
   await page.getByRole("button", { name: "Открыть очередь" }).click();
+  const pendingRequest = await pendingRequestPromise;
+  expect(pendingRequest.headers()["x-st-village-admin-token"]).toBe("test-admin-token");
+  expect(pendingRequest.headers().authorization).toBeUndefined();
   await expect(page.getByText("Тестовый клиент")).toBeVisible();
+  const moderationRequestPromise = page.waitForRequest((request) => request.method() === "PATCH" && request.url().includes("/api/reviews"));
   await page.getByRole("button", { name: "Опубликовать" }).click();
+  const moderationRequest = await moderationRequestPromise;
+  expect(moderationRequest.headers()["x-st-village-admin-token"]).toBe("test-admin-token");
+  expect(moderationRequest.headers().authorization).toBeUndefined();
   await expect(page.getByRole("status")).toContainText("Отзыв опубликован");
   await expect(page.getByText("Тестовый клиент")).toHaveCount(0);
 });

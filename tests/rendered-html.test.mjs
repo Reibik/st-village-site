@@ -435,7 +435,9 @@ test("reviews are moderated and the checklist contains no unfinished items", asy
   assert.match(reviewBoard, /formElement\.reset\(\)/);
   assert.match(reviewBoard, /response\.json\(\)\.catch/);
   assert.match(reviewBoard, /role=\{state === "error" \? "alert" : "status"\}/);
-  assert.match(moderationPage, /Authorization: `Bearer \$\{token\}`/);
+  assert.match(moderationPage, /"X-ST-Village-Admin-Token": token/);
+  assert.doesNotMatch(moderationPage, /Authorization: `Bearer/);
+  assert.match(reviewRoute, /x-st-village-admin-token/);
   assert.match(moderationPage, /"approved"/);
   assert.match(moderationPage, /"rejected"/);
   assert.match(reviewNotifications, /STATUS_ALERT_TELEGRAM_BOT_TOKEN/);

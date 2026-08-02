@@ -394,6 +394,8 @@ test("observability, incidents, regional checks and private analytics are wired"
   assert.match(alerts, /STATUS_ALERT_TELEGRAM_BOT_TOKEN/);
   assert.match(alerts, /previous === fingerprint/);
   assert.match(regional, /api\.globalping\.io\/v1\/measurements/);
+  assert.match(regional, /STATUS_PUBLIC_SITE_URL/);
+  assert.match(regional, /https:\/\/stvillage\.ru/);
   assert.match(migration, /CREATE TABLE IF NOT EXISTS incidents/);
   assert.match(migration, /CREATE INDEX IF NOT EXISTS idx_status_samples_checked_at/);
   assert.match(migration, /PRAGMA optimize/);

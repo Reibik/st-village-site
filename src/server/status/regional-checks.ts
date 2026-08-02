@@ -1,5 +1,3 @@
-import { SITE_URL } from "@/src/config/seo";
-
 export type RegionalCheck = {
   id: string;
   label: string;
@@ -49,7 +47,7 @@ export async function getRegionalChecks(): Promise<RegionalCheck[]> {
   if (process.env.STATUS_REGIONAL_CHECKS_DISABLED === "1") return fallbackChecks();
   if (cached && cached.expiresAt > Date.now()) return cached.value;
   try {
-    const site = new URL(SITE_URL);
+    const site = new URL(process.env.STATUS_PUBLIC_SITE_URL || "https://stvillage.ru");
     const response = await fetch("https://api.globalping.io/v1/measurements", {
       method: "POST",
       cache: "no-store",

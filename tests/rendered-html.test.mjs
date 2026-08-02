@@ -422,13 +422,26 @@ test("reviews are moderated and the checklist contains no unfinished items", asy
 
   const reviewRoute = await readFile(new URL("../app/api/reviews/route.ts", import.meta.url), "utf8");
   const reviewBoard = await readFile(new URL("../src/features/reviews/reviews-board.tsx", import.meta.url), "utf8");
+  const moderationPage = await readFile(new URL("../src/features/reviews/reviews-moderation.tsx", import.meta.url), "utf8");
+  const reviewNotifications = await readFile(new URL("../src/server/reviews/notifications.ts", import.meta.url), "utf8");
+  const storage = await readFile(new URL("../src/server/storage/database.ts", import.meta.url), "utf8");
+  const devDeploy = await readFile(new URL("../ops/vps/deploy-dev.sh", import.meta.url), "utf8");
   const checklist = await readFile(new URL("../SITE_IMPROVEMENT_CHECKLIST.md", import.meta.url), "utf8");
   assert.match(reviewRoute, /REVIEWS_ADMIN_TOKEN/);
   assert.match(reviewRoute, /pendingModeration/);
+  assert.match(reviewRoute, /getPendingReviews/);
+  assert.match(reviewRoute, /notifyReviewSubmission/);
   assert.match(reviewBoard, /const formElement = event\.currentTarget/);
   assert.match(reviewBoard, /formElement\.reset\(\)/);
   assert.match(reviewBoard, /response\.json\(\)\.catch/);
   assert.match(reviewBoard, /role=\{state === "error" \? "alert" : "status"\}/);
+  assert.match(moderationPage, /Authorization: `Bearer \$\{token\}`/);
+  assert.match(moderationPage, /"approved"/);
+  assert.match(moderationPage, /"rejected"/);
+  assert.match(reviewNotifications, /STATUS_ALERT_TELEGRAM_BOT_TOKEN/);
+  assert.match(reviewNotifications, /inline_keyboard/);
+  assert.match(storage, /\/opt\/st-village-dev\/data\/observability\.json/);
+  assert.match(devDeploy, /pre-persistence review queue/);
   assert.doesNotMatch(checklist, /- \[ \]/);
   for (const item of ["История доступности", "Лента инцидентов", "Приватная аналитика", "Core Web Vitals"]) {
     assert.match(checklist, new RegExp(`\\[x\\].*${item}`));

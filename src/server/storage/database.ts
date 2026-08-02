@@ -38,6 +38,7 @@ export type PublicReview = {
   text: string;
   createdAt: string;
 };
+export type PendingReview = PublicReview & { status: "pending" };
 
 let databasePromise: Promise<D1DatabaseLike | null> | null = null;
 let schemaReady: Promise<void> | null = null;
@@ -62,13 +63,20 @@ function emptyFileState(): FileState {
   return { samples: [], incidents: [], reviews: [], alerts: {}, metrics: {} };
 }
 
+function defaultFileStorePath(channel: string) {
+  if (process.env.NEXT_PUBLIC_SITE_URL?.includes("dev.stvillage.ru")) {
+    return "/opt/st-village-dev/data/observability.json";
+  }
+  return `/var/tmp/st-village-observability-${channel}.json`;
+}
+
 async function getFileStore(): Promise<FileStore | null> {
   if (!fileStorePromise) {
     fileStorePromise = (async () => {
       try {
         const fs = await import("node:fs/promises");
         const channel = (process.env.ST_VILLAGE_CHANNEL || process.env.NODE_ENV || "site").replace(/[^a-z0-9_-]/gi, "-");
-        const path = process.env.OBSERVABILITY_FILE_PATH || `/var/tmp/st-village-observability-${channel}.json`;
+        const path = process.env.OBSERVABILITY_FILE_PATH || defaultFileStorePath(channel);
         let state = emptyFileState();
         try {
           state = { ...state, ...JSON.parse(await fs.readFile(path, "utf8")) as Partial<FileState> };
@@ -236,6 +244,23 @@ export async function getApprovedReviews(): Promise<PublicReview[]> {
   const rows = (await database.prepare(`SELECT id, display_name, rating, text, created_at FROM reviews
     WHERE status = 'approved' ORDER BY created_at DESC LIMIT 12`).all<Record<string, unknown>>()).results ?? [];
   return rows.map((row) => ({ id: String(row.id), displayName: String(row.display_name), rating: Number(row.rating), text: String(row.text), createdAt: String(row.created_at) }));
+}
+
+export async function getPendingReviews(): Promise<PendingReview[]> {
+  const database = await getDatabase();
+  if (!database) {
+    const store = await getFileStore();
+    return (store?.state.reviews ?? [])
+      .filter((review): review is StoredReview & { status: "pending" } => review.status === "pending")
+      .slice(0, 100)
+      .map(({ id, displayName, rating, text, createdAt }) => ({ id, displayName, rating, text, createdAt, status: "pending" }));
+  }
+  const rows = (await database.prepare(`SELECT id, display_name, rating, text, created_at FROM reviews
+    WHERE status = 'pending' ORDER BY created_at ASC LIMIT 100`).all<Record<string, unknown>>()).results ?? [];
+  return rows.map((row) => ({
+    id: String(row.id), displayName: String(row.display_name), rating: Number(row.rating),
+    text: String(row.text), createdAt: String(row.created_at), status: "pending",
+  }));
 }
 
 export async function submitReview(review: Omit<PublicReview, "id" | "createdAt">) {

@@ -38,7 +38,7 @@ export function ReviewsBoard() {
           text: form.get("text"), website: form.get("website"),
         }),
       });
-      const payload = await response.json().catch(() => ({})) as { error?: string; stored?: boolean };
+      const payload = await response.json().catch(() => ({})) as { error?: string; stored?: boolean; moderationNotified?: boolean };
       if (!response.ok) {
         setState("error");
         setMessage(payload.error || "Не удалось отправить отзыв. Попробуйте ещё раз.");

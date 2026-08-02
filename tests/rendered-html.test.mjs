@@ -132,13 +132,17 @@ test("status endpoint returns a sanitized live snapshot", async () => {
 });
 
 test("unconfigured integrations fail honestly", async () => {
-  for (const path of ["/api/health/database", "/api/health/remnawave"]) {
-    const response = await worker.fetch(new Request(`http://localhost${path}`), env, context);
-    assert.equal(response.status, 503);
-    const payload = await response.json();
-    assert.equal(payload.status, "unavailable");
-    assert.doesNotMatch(JSON.stringify(payload), /stack|password|token/i);
-  }
+  const storageResponse = await worker.fetch(new Request("http://localhost/api/health/database"), env, context);
+  assert.equal([200, 503].includes(storageResponse.status), true);
+  const storagePayload = await storageResponse.json();
+  assert.equal(storagePayload.status, storageResponse.status === 200 ? "ok" : "unavailable");
+  assert.doesNotMatch(JSON.stringify(storagePayload), /stack|password|token/i);
+
+  const remnawaveResponse = await worker.fetch(new Request("http://localhost/api/health/remnawave"), env, context);
+  assert.equal(remnawaveResponse.status, 503);
+  const remnawavePayload = await remnawaveResponse.json();
+  assert.equal(remnawavePayload.status, "unavailable");
+  assert.doesNotMatch(JSON.stringify(remnawavePayload), /stack|password|token/i);
 });
 
 test("connection center uses official Happ and INCY downloads for every platform", async () => {

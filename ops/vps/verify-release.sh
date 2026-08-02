@@ -9,7 +9,7 @@ check_url() {
   curl --fail --silent --show-error --location --max-time 15 "${base_url}${path}" >/dev/null
 }
 
-for path in / /pricing /connect /status /news /support /release /robots.txt /sitemap.xml /manifest.webmanifest /api/health; do
+for path in / /pricing /connect /status /news /reviews /support /release /robots.txt /sitemap.xml /manifest.webmanifest /api/health /api/observability; do
   check_url "$path"
 done
 

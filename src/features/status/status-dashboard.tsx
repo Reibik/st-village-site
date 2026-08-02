@@ -61,13 +61,13 @@ export function StatusDashboard() {
   const operationalLocations = snapshot.locations.filter((location) => location.status === "operational").length;
 
   return <>
-    <div className="status-toolbar">
+    <div className="status-toolbar" aria-live="polite">
       <div><small>Общее состояние</small><StatusPill status={snapshot.status} /></div>
       <div className="status-updated"><small>Последнее обновление</small><strong>{formatTime(snapshot.generatedAt)}</strong></div>
       <button className="button button-secondary status-refresh" disabled={refreshing} onClick={() => void load(true)}>{refreshing ? "Проверяем…" : "Обновить"}</button>
     </div>
 
-    {error && <div className="notice status-warning"><span>ⓘ</span><div><strong>Не удалось обновить данные</strong>Показано последнее успешно полученное состояние.</div></div>}
+    {error && <div className="notice status-warning" role="alert"><span>ⓘ</span><div><strong>Не удалось обновить данные</strong>Показано последнее успешно полученное состояние.</div></div>}
 
     <div className="status-metrics" aria-label="Краткая сводка мониторинга">
       <div><small>Работающие сервисы</small><strong>{operationalServices}<span>/{snapshot.services.length}</span></strong></div>

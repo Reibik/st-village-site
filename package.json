@@ -14,9 +14,10 @@
     "test:links": "node scripts/check-client-links.mjs",
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
+    "test:performance": "node scripts/check-performance-budget.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern worker",
     "typecheck": "tsc --noEmit --pretty false",
-    "release:check": "pnpm lint && pnpm typecheck && pnpm build && node --test tests/rendered-html.test.mjs"
+    "release:check": "pnpm lint && pnpm typecheck && pnpm test:performance && pnpm build && node --test tests/rendered-html.test.mjs"
   },
   "dependencies": {
     "next": "16.2.11",

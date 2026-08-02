@@ -5,6 +5,7 @@ import { FaqList } from "@/src/components/faq-list";
 import { SectionHeading } from "@/src/components/section-heading";
 import { PlatformStrip } from "@/src/components/platform-strip";
 import { TrialOffer } from "@/src/components/trial-offer";
+import { TrustPanel } from "@/src/components/trust-panel";
 import { TelegramNewsFeed } from "@/src/features/news/telegram-news-feed";
 import { PricingCatalog } from "@/src/features/pricing/pricing-catalog";
 import { homeFaqs, locations } from "@/src/config/content";
@@ -72,8 +73,10 @@ export default function Home() {
       <PlatformStrip />
 
       <section className="section-shell trial-section" aria-label="Пробный период ST VILLAGE">
-        <TrialOffer />
+      <TrialOffer />
       </section>
+
+      <TrustPanel />
 
       <section className="section-shell section-block" id="features">
         <SectionHeading eyebrow="Основа сервиса" title="Всё необходимое. Без лишнего." text="ST VILLAGE объединяет подключение, управление и поддержку в цельный пользовательский путь." />

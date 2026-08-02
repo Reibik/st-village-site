@@ -35,6 +35,8 @@ required=(
   st-village-dev-site.service
   st-village-dev-deploy.service
   st-village-dev-deploy.timer
+  st-village-status-collector.service
+  st-village-status-collector.timer
 )
 
 for file in "${required[@]}"; do
@@ -73,6 +75,8 @@ install -o root -g root -m 700 "${stage}/deploy-dev.sh" /usr/local/sbin/st-villa
 install -o root -g root -m 644 "${stage}/st-village-dev-site.service" /etc/systemd/system/st-village-dev-site.service
 install -o root -g root -m 644 "${stage}/st-village-dev-deploy.service" /etc/systemd/system/st-village-dev-deploy.service
 install -o root -g root -m 644 "${stage}/st-village-dev-deploy.timer" /etc/systemd/system/st-village-dev-deploy.timer
+install -o root -g root -m 644 "${stage}/st-village-status-collector.service" /etc/systemd/system/st-village-status-collector.service
+install -o root -g root -m 644 "${stage}/st-village-status-collector.timer" /etc/systemd/system/st-village-status-collector.timer
 
 printf 'step=caddy-environment\n'
 install -d -o root -g root -m 755 /etc/systemd/system/caddy.service.d
@@ -124,6 +128,7 @@ fi
 printf 'step=enable-services\n'
 systemctl enable st-village-dev-site.service
 systemctl enable --now st-village-dev-deploy.timer
+systemctl enable --now st-village-status-collector.timer
 systemctl start --no-block st-village-dev-deploy.service
 
 printf 'step=cleanup\n'

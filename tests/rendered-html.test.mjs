@@ -3,6 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import test from "node:test";
 
 process.env.STATUS_PROBE_TIMEOUT_MS = "500";
+process.env.STATUS_REGIONAL_CHECKS_DISABLED = "1";
 
 const workerUrl = new URL("../dist/server/index.js", import.meta.url);
 workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
@@ -47,6 +48,7 @@ test("all public pages render their expected content", async () => {
     ["/connect", "Happ и INCY — два основных приложения"],
     ["/status", "Состояние инфраструктуры"],
     ["/news", "Новости ST VILLAGE"],
+    ["/reviews", "Честная обратная связь"],
     ["/support", "Помощь, когда она нужна"],
     ["/release", "ST VILLAGE готов к стабильной работе"],
     ["/legal/privacy", "Политика конфиденциальности 🚀ST VILLAGE🚀"],
@@ -304,6 +306,7 @@ test("search engines and social platforms receive complete page metadata", async
   assert.match(sitemapXml, /https:\/\/stvillage\.ru\/legal\/privacy/);
   assert.match(sitemapXml, /https:\/\/stvillage\.ru\/legal\/terms/);
   assert.match(sitemapXml, /https:\/\/stvillage\.ru\/release/);
+  assert.match(sitemapXml, /https:\/\/stvillage\.ru\/reviews/);
 
   const manifest = await worker.fetch(new Request("http://localhost/manifest.webmanifest"), env, context);
   const manifestJson = await manifest.json();
@@ -355,9 +358,84 @@ test("official client links and visual baselines are checked automatically", asy
   assert.match(playwrightConfig, /name: "mobile"/);
   assert.match(visualSpec, /home-hero\.png/);
   assert.match(visualSpec, /pricing-page\.png/);
+  assert.match(visualSpec, /status-observability\.png/);
+  assert.match(visualSpec, /reviews-page\.png/);
   assert.match(checklist, /\[x\] Расширенная Schema\.org-разметка тарифов, FAQ и новостей/);
   assert.match(checklist, /\[x\] Автоматическая проверка внешних ссылок Happ и INCY/);
   assert.match(checklist, /\[x\] Визуальные регрессионные тесты для desktop и mobile/);
+});
+
+test("observability, incidents, regional checks and private analytics are wired", async () => {
+  const observability = await worker.fetch(new Request("http://localhost/api/observability?range=7d"), env, context);
+  assert.equal(observability.status, 200);
+  const payload = await observability.json();
+  assert.equal(payload.range, "7d");
+  assert.equal(Array.isArray(payload.history.points), true);
+  assert.equal(Array.isArray(payload.incidents), true);
+  assert.equal(payload.regions.length, 3);
+  assert.equal(payload.regions.every((region) => !region.probeId && !region.ip), true);
+
+  const analytics = await worker.fetch(new Request("http://localhost/api/analytics", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-forwarded-for": "203.0.113.1" },
+    body: JSON.stringify({ eventType: "outbound_click", destination: "cabinet", page: "/pricing" }),
+  }), env, context);
+  assert.equal(analytics.status, 202);
+  assert.doesNotMatch(await analytics.text(), /203\.0\.113\.1|user-agent|cookie/i);
+
+  const storage = await readFile(new URL("../src/server/storage/database.ts", import.meta.url), "utf8");
+  const alerts = await readFile(new URL("../src/server/status/alerts.ts", import.meta.url), "utf8");
+  const regional = await readFile(new URL("../src/server/status/regional-checks.ts", import.meta.url), "utf8");
+  const migration = await readFile(new URL("../drizzle/0000_observability.sql", import.meta.url), "utf8");
+  const hosting = JSON.parse(await readFile(new URL("../.openai/hosting.json", import.meta.url), "utf8"));
+  assert.equal(hosting.d1, "DB");
+  assert.match(storage, /status_samples/);
+  assert.match(storage, /private_metrics/);
+  assert.match(alerts, /STATUS_ALERT_TELEGRAM_BOT_TOKEN/);
+  assert.match(alerts, /previous === fingerprint/);
+  assert.match(regional, /api\.globalping\.io\/v1\/measurements/);
+  assert.match(migration, /CREATE TABLE IF NOT EXISTS incidents/);
+  assert.match(migration, /CREATE INDEX IF NOT EXISTS idx_status_samples_checked_at/);
+  assert.match(migration, /PRAGMA optimize/);
+});
+
+test("reviews are moderated and the checklist contains no unfinished items", async () => {
+  const reviewsPage = await worker.fetch(new Request("http://localhost/reviews", { headers: { accept: "text/html" } }), env, context);
+  const html = await reviewsPage.text();
+  assert.match(html, /Честная обратная связь/);
+  assert.match(html, /ручную модерацию/);
+  assert.doesNotMatch(html, /Иван|Мария|Алексей/);
+
+  const invalid = await worker.fetch(new Request("http://localhost/api/reviews", {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ displayName: "A", rating: 8, text: "short" }),
+  }), env, context);
+  assert.equal(invalid.status, 400);
+
+  const reviewRoute = await readFile(new URL("../app/api/reviews/route.ts", import.meta.url), "utf8");
+  const checklist = await readFile(new URL("../SITE_IMPROVEMENT_CHECKLIST.md", import.meta.url), "utf8");
+  assert.match(reviewRoute, /REVIEWS_ADMIN_TOKEN/);
+  assert.match(reviewRoute, /pendingModeration/);
+  assert.doesNotMatch(checklist, /- \[ \]/);
+  for (const item of ["История доступности", "Лента инцидентов", "Приватная аналитика", "Core Web Vitals"]) {
+    assert.match(checklist, new RegExp(`\\[x\\].*${item}`));
+  }
+});
+
+test("accessibility and performance safeguards cover the new public surfaces", async () => {
+  const header = await readFile(new URL("../src/components/site-header.tsx", import.meta.url), "utf8");
+  const status = await readFile(new URL("../src/features/status/status-dashboard.tsx", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  const performance = await readFile(new URL("../scripts/check-performance-budget.mjs", import.meta.url), "utf8");
+  const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
+  assert.match(header, /event\.key === "Escape"/);
+  assert.match(header, /aria-current/);
+  assert.match(status, /aria-live="polite"/);
+  assert.match(styles, /prefers-reduced-motion: reduce/);
+  assert.match(styles, /forced-colors: active/);
+  assert.match(styles, /:focus-visible/);
+  assert.match(performance, /cabinet-dashboard-preview\.webp/);
+  assert.match(packageJson.scripts["release:check"], /test:performance/);
 });
 
 test("v1.0.0 stable release safeguards are present", async () => {

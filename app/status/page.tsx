@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import { PageHero } from "@/src/components/page-hero";
 import { createPageMetadata } from "@/src/config/seo";
 import { StatusDashboard } from "@/src/features/status/status-dashboard";
+import { StatusInsights } from "@/src/features/status/status-insights";
 
 export const metadata: Metadata = createPageMetadata({ title: "Статус инфраструктуры", description: "Актуальное состояние сервисов и серверных локаций ST VILLAGE с автоматическим обновлением.", path: "/status" });
 
 export default function StatusPage() {
   return <>
     <PageHero eyebrow="Статус" title="Состояние инфраструктуры" text="Живые проверки сайта, кабинета, Telegram и серверных локаций. Данные обновляются автоматически каждые 30 секунд." />
-    <section className="section-shell page-content"><StatusDashboard /></section>
+    <section className="section-shell page-content"><StatusDashboard /><StatusInsights /></section>
   </>;
 }

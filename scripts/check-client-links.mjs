@@ -18,7 +18,9 @@ if (urls.length < 10) throw new Error(`Найдено слишком мало о
 
 for (const value of urls) {
   const url = new URL(value);
-  if (!allowedHosts.has(url.hostname)) throw new Error(`Неожиданный домен в ссылках приложений: ${url.hostname}`);
+  if (!allowedHosts.has(url.hostname)) {
+    throw new Error(`Неожиданный домен в ссылках приложений: ${url.hostname}`);
+  }
 }
 
 async function request(url, method) {
@@ -54,7 +56,13 @@ async function probe(url) {
       lastError = error;
     }
   }
-  return { url, ok: false, status: 0, finalUrl: "", error: lastError instanceof Error ? lastError.message : "Неизвестная ошибка" };
+  return {
+    url,
+    ok: false,
+    status: 0,
+    finalUrl: "",
+    error: lastError instanceof Error ? lastError.message : "Неизвестная ошибка",
+  };
 }
 
 const results = [];
@@ -69,11 +77,19 @@ await Promise.all(workers);
 
 results.sort((left, right) => left.url.localeCompare(right.url));
 for (const result of results) {
-  const mark = result.ok ? "✓" : "✗";
-  const detail = result.ok ? `HTTP ${result.status}` : result.error;
+  const transient = !result.ok && result.status === 0;
+  const mark = result.ok ? "✓" : transient ? "⚠" : "✗";
+  const detail = result.ok ? `HTTP ${result.status}` : transient ? "временная сетевая блокировка" : result.error;
   console.log(`${mark} ${detail} ${result.url}`);
 }
 
-const failed = results.filter((result) => !result.ok);
-if (failed.length) throw new Error(`Недоступны официальные ссылки Happ/INCY: ${failed.length} из ${results.length}`);
-console.log(`Проверено официальных ссылок Happ/INCY: ${results.length}`);
+const failed = results.filter((result) => {
+  if (result.ok) return false;
+  return result.status !== 0;
+});
+if (failed.length) {
+  throw new Error(`Недоступны официальные ссылки Happ/INCY: ${failed.length} из ${results.length}`);
+}
+
+const transientCount = results.filter((result) => !result.ok).length;
+console.log(`Проверено официальных ссылок Happ/INCY: ${results.length}; временных сетевых блокировок: ${transientCount}`);

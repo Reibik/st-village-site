@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { SiteFooter } from "@/src/components/site-footer";
 import { SiteHeader } from "@/src/components/site-header";
+import { SiteObservability } from "@/src/components/site-observability";
 import { UpdateNotice } from "@/src/components/update-notice";
 import { createPageMetadata, DEFAULT_DESCRIPTION, DEFAULT_TITLE, rootJsonLd, SITE_NAME, SITE_URL } from "@/src/config/seo";
 import "./globals.css";
@@ -59,6 +60,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <main id="main-content">{children}</main>
         <SiteFooter />
         <UpdateNotice />
+        <SiteObservability />
       </body>
     </html>
   );

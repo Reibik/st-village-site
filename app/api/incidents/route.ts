@@ -1,4 +1,5 @@
 import { getIncidents, saveIncident, type Incident } from "@/src/server/storage/database";
+import { checkRateLimit, rateLimitResponse, readJsonLimited } from "@/src/server/security/rate-limit";
 
 const statuses = new Set<Incident["status"]>(["investigating", "monitoring", "resolved", "scheduled"]);
 const severities = new Set<Incident["severity"]>(["info", "minor", "major"]);
@@ -8,11 +9,14 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const rateLimit = await checkRateLimit(request, "status-admin", 60, 15 * 60_000);
+  if (!rateLimit.allowed) return rateLimitResponse(rateLimit.retryAfterSeconds);
   const configuredToken = process.env.STATUS_ADMIN_TOKEN?.trim();
-  const suppliedToken = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  const suppliedToken = request.headers.get("x-st-village-status-token")?.trim()
+    || request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
   if (!configuredToken || suppliedToken !== configuredToken) return Response.json({ error: "unauthorized" }, { status: 401 });
   try {
-    const payload = await request.json() as Partial<Incident>;
+    const payload = await readJsonLimited(request) as Partial<Incident>;
     const incident: Incident = {
       id: String(payload.id || crypto.randomUUID()).slice(0, 80),
       title: String(payload.title || "").trim().slice(0, 120),
@@ -32,4 +36,3 @@ export async function POST(request: Request) {
     return Response.json({ error: "invalid payload" }, { status: 400 });
   }
 }
-

@@ -1,0 +1,11 @@
+[Unit]
+Description=Run ST VILLAGE backup every day
+
+[Timer]
+OnCalendar=*-*-* 02:25:00 Europe/Moscow
+RandomizedDelaySec=15m
+Persistent=true
+Unit=st-village-backup.service
+
+[Install]
+WantedBy=timers.target

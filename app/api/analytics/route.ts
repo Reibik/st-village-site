@@ -1,4 +1,5 @@
-import { recordPrivateMetric } from "@/src/server/storage/database";
+import { checkRateLimit, rateLimitResponse } from "@/src/server/security/rate-limit";
+import { getPrivateMetricsSummary, recordPrivateMetric } from "@/src/server/storage/database";
 
 const destinations = new Set(["cabinet", "telegram"]);
 const vitalNames = new Set(["CLS", "FCP", "INP", "LCP", "TTFB"]);
@@ -9,6 +10,8 @@ function safePage(value: unknown) {
 }
 
 export async function POST(request: Request) {
+  const rateLimit = await checkRateLimit(request, "private-analytics", 120, 15 * 60_000);
+  if (!rateLimit.allowed) return rateLimitResponse(rateLimit.retryAfterSeconds);
   try {
     const payload = await request.json() as Record<string, unknown>;
     if (payload.eventType === "outbound_click" && typeof payload.destination === "string" && destinations.has(payload.destination)) {
@@ -31,3 +34,13 @@ export async function POST(request: Request) {
   return Response.json({ error: "unsupported event" }, { status: 400 });
 }
 
+export async function GET(request: Request) {
+  const rateLimit = await checkRateLimit(request, "status-admin", 60, 15 * 60_000);
+  if (!rateLimit.allowed) return rateLimitResponse(rateLimit.retryAfterSeconds);
+  const configuredToken = process.env.STATUS_ADMIN_TOKEN?.trim();
+  const suppliedToken = request.headers.get("x-st-village-status-token")?.trim()
+    || request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  if (!configuredToken || suppliedToken !== configuredToken) return Response.json({ error: "unauthorized" }, { status: 401 });
+  const days = Number(new URL(request.url).searchParams.get("days") || 30);
+  return Response.json(await getPrivateMetricsSummary(days), { headers: { "Cache-Control": "no-store" } });
+}

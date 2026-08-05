@@ -33,6 +33,7 @@ AmbientCapabilities=
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 SystemCallArchitectures=native
 UMask=0027
+ReadWritePaths=/opt/st-village-site/data
 
 [Install]
 WantedBy=multi-user.target

@@ -40,8 +40,21 @@ async function prepare(page: Page) {
     return route.fulfill({ json: { reviews: [] } });
   };
   await page.route(/\/api\/reviews(?:\?.*)?$/, reviewsRoute);
+  await page.route("**/api/analytics?**", (route) => route.fulfill({ json: {
+    days: 30,
+    outbound: { cabinet: 42, telegram: 17 },
+    vitals: [{ name: "LCP", average: 1220, samples: 31 }],
+  } }));
+  await page.route("**/api/incidents", (route) => {
+    if (route.request().method() === "POST") return route.fulfill({ json: { incident: {
+      id: "incident-new", title: "Плановые работы", summary: "Короткая проверка панели управления.",
+      severity: "info", status: "scheduled", planned: true, affectedServices: ["Сайт"],
+      startsAt: "2026-08-02T04:00:00.000Z", resolvedAt: null,
+    } } });
+    return route.fulfill({ json: { incidents: [] } });
+  });
   await page.route("**/api/version", (route) => route.fulfill({
-    json: { version: "1.0.0", channel: "stable" },
+    json: { version: "1.1.0", channel: "stable" },
   }));
 }
 
@@ -116,7 +129,7 @@ test("модератор может опубликовать ожидающий 
   await page.goto("/reviews/moderation", { waitUntil: "networkidle" });
   await page.getByLabel("Токен модератора").fill("test-admin-token");
   const pendingRequestPromise = page.waitForRequest((request) => request.url().includes("status=pending"));
-  await page.getByRole("button", { name: "Открыть очередь" }).click();
+  await page.getByRole("button", { name: "Открыть модерацию" }).click();
   const pendingRequest = await pendingRequestPromise;
   expect(pendingRequest.headers()["x-st-village-admin-token"]).toBe("test-admin-token");
   expect(pendingRequest.headers().authorization).toBeUndefined();
@@ -128,4 +141,22 @@ test("модератор может опубликовать ожидающий 
   expect(moderationRequest.headers().authorization).toBeUndefined();
   await expect(page.getByRole("status")).toContainText("Отзыв опубликован");
   await expect(page.getByText("Тестовый клиент")).toHaveCount(0);
+});
+
+test("администратор может открыть метрики и создать публикацию статуса", async ({ page }) => {
+  await prepare(page);
+  await page.goto("/status/management", { waitUntil: "networkidle" });
+  await page.getByLabel("STATUS_ADMIN_TOKEN").fill("test-status-token");
+  const metricsRequestPromise = page.waitForRequest((request) => request.url().includes("/api/analytics?days=30"));
+  await page.getByRole("button", { name: "Открыть управление" }).click();
+  const metricsRequest = await metricsRequestPromise;
+  expect(metricsRequest.headers()["x-st-village-status-token"]).toBe("test-status-token");
+  await expect(page.getByText("42")).toBeVisible();
+  await page.getByLabel("Заголовок").fill("Плановые работы");
+  await page.getByLabel("Описание").fill("Короткая проверка панели управления.");
+  const incidentRequestPromise = page.waitForRequest((request) => request.method() === "POST" && request.url().endsWith("/api/incidents"));
+  await page.getByRole("button", { name: "Сохранить публикацию" }).click();
+  const incidentRequest = await incidentRequestPromise;
+  expect(incidentRequest.headers()["x-st-village-status-token"]).toBe("test-status-token");
+  await expect(page.getByRole("status")).toContainText("Публикация сохранена");
 });

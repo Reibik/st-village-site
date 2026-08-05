@@ -31,6 +31,11 @@ export type Incident = {
   startsAt: string;
   resolvedAt: string | null;
 };
+export type PrivateMetricsSummary = {
+  days: number;
+  outbound: { cabinet: number; telegram: number };
+  vitals: Array<{ name: string; average: number; samples: number }>;
+};
 export type PublicReview = {
   id: string;
   displayName: string;
@@ -38,7 +43,10 @@ export type PublicReview = {
   text: string;
   createdAt: string;
 };
-export type PendingReview = PublicReview & { status: "pending" };
+export type ManagedReview = PublicReview & {
+  status: "pending" | "approved" | "rejected";
+  moderatedAt?: string;
+};
 
 let databasePromise: Promise<D1DatabaseLike | null> | null = null;
 let schemaReady: Promise<void> | null = null;
@@ -66,6 +74,9 @@ function emptyFileState(): FileState {
 function defaultFileStorePath(channel: string) {
   if (process.env.NEXT_PUBLIC_SITE_URL?.includes("dev.stvillage.ru")) {
     return "/opt/st-village-dev/data/observability.json";
+  }
+  if (process.env.NEXT_PUBLIC_SITE_URL?.includes("stvillage.ru")) {
+    return "/opt/st-village-site/data/observability.json";
   }
   return `/var/tmp/st-village-observability-${channel}.json`;
 }
@@ -246,20 +257,20 @@ export async function getApprovedReviews(): Promise<PublicReview[]> {
   return rows.map((row) => ({ id: String(row.id), displayName: String(row.display_name), rating: Number(row.rating), text: String(row.text), createdAt: String(row.created_at) }));
 }
 
-export async function getPendingReviews(): Promise<PendingReview[]> {
+export async function getManagedReviews(status: ManagedReview["status"]): Promise<ManagedReview[]> {
   const database = await getDatabase();
   if (!database) {
     const store = await getFileStore();
     return (store?.state.reviews ?? [])
-      .filter((review): review is StoredReview & { status: "pending" } => review.status === "pending")
-      .slice(0, 100)
-      .map(({ id, displayName, rating, text, createdAt }) => ({ id, displayName, rating, text, createdAt, status: "pending" }));
+      .filter((review) => review.status === status)
+      .slice(0, 100);
   }
-  const rows = (await database.prepare(`SELECT id, display_name, rating, text, created_at FROM reviews
-    WHERE status = 'pending' ORDER BY created_at ASC LIMIT 100`).all<Record<string, unknown>>()).results ?? [];
+  const rows = (await database.prepare(`SELECT id, display_name, rating, text, status, created_at, moderated_at
+    FROM reviews WHERE status = ? ORDER BY created_at DESC LIMIT 100`).bind(status).all<Record<string, unknown>>()).results ?? [];
   return rows.map((row) => ({
-    id: String(row.id), displayName: String(row.display_name), rating: Number(row.rating),
-    text: String(row.text), createdAt: String(row.created_at), status: "pending",
+    id: String(row.id), displayName: String(row.display_name), rating: Number(row.rating), text: String(row.text),
+    status: row.status as ManagedReview["status"], createdAt: String(row.created_at),
+    moderatedAt: row.moderated_at ? String(row.moderated_at) : undefined,
   }));
 }
 
@@ -293,6 +304,21 @@ export async function moderateReview(id: string, status: "approved" | "rejected"
   return true;
 }
 
+export async function deleteReview(id: string) {
+  const database = await getDatabase();
+  if (!database) {
+    const store = await getFileStore();
+    if (!store) return false;
+    const before = store.state.reviews.length;
+    store.state.reviews = store.state.reviews.filter((item) => item.id !== id);
+    return before !== store.state.reviews.length && persistFileStore(store);
+  }
+  const existing = await database.prepare("SELECT id FROM reviews WHERE id = ?").bind(id).first<{ id: string }>();
+  if (!existing) return false;
+  await database.prepare("DELETE FROM reviews WHERE id = ?").bind(id).run();
+  return true;
+}
+
 export async function recordPrivateMetric(input: {
   eventType: "outbound_click" | "web_vital";
   destination?: "cabinet" | "telegram";
@@ -305,7 +331,10 @@ export async function recordPrivateMetric(input: {
     const store = await getFileStore();
     if (!store) return false;
     const key = [new Date().toISOString().slice(0, 10), input.eventType, input.destination ?? "", input.page, input.metricName ?? ""].join("|");
-    store.state.metrics[key] = (store.state.metrics[key] ?? 0) + 1;
+    store.state.metrics[`${key}|count`] = (store.state.metrics[`${key}|count`] ?? store.state.metrics[key] ?? 0) + 1;
+    if (input.eventType === "web_vital" && typeof input.metricValue === "number") {
+      store.state.metrics[`${key}|sum`] = (store.state.metrics[`${key}|sum`] ?? 0) + input.metricValue;
+    }
     return persistFileStore(store);
   }
   const now = new Date();
@@ -317,6 +346,47 @@ export async function recordPrivateMetric(input: {
       now.toISOString().slice(0, 10), now.toISOString(),
     ).run();
   return true;
+}
+
+export async function getPrivateMetricsSummary(days = 30): Promise<PrivateMetricsSummary> {
+  const safeDays = Math.min(90, Math.max(1, Math.floor(days)));
+  const sinceDate = new Date(Date.now() - (safeDays - 1) * 86_400_000).toISOString().slice(0, 10);
+  const database = await getDatabase();
+  if (!database) {
+    const store = await getFileStore();
+    const outbound = { cabinet: 0, telegram: 0 };
+    const vitals = new Map<string, { sum: number; samples: number }>();
+    for (const [key, value] of Object.entries(store?.state.metrics ?? {})) {
+      const [day, eventType, destination, , metricName, suffix] = key.split("|");
+      if (day < sinceDate || suffix === "sum" || (!suffix && eventType === "web_vital")) continue;
+      if (!suffix && store?.state.metrics[`${key}|count`] !== undefined) continue;
+      if (eventType === "outbound_click" && (destination === "cabinet" || destination === "telegram")) outbound[destination] += value;
+      if (eventType === "web_vital" && metricName) {
+        const current = vitals.get(metricName) ?? { sum: 0, samples: 0 };
+        const baseKey = key.replace(/\|count$/, "");
+        current.samples += value;
+        current.sum += store?.state.metrics[`${baseKey}|sum`] ?? 0;
+        vitals.set(metricName, current);
+      }
+    }
+    return {
+      days: safeDays,
+      outbound,
+      vitals: [...vitals.entries()].map(([name, value]) => ({ name, samples: value.samples, average: value.samples ? value.sum / value.samples : 0 })),
+    };
+  }
+  const since = new Date(Date.now() - safeDays * 86_400_000).toISOString();
+  const outboundRows = (await database.prepare(`SELECT destination, COUNT(*) AS total FROM private_metrics
+    WHERE event_type = 'outbound_click' AND created_at >= ? GROUP BY destination`).bind(since).all<Record<string, unknown>>()).results ?? [];
+  const vitalRows = (await database.prepare(`SELECT metric_name, AVG(metric_value) AS average, COUNT(*) AS samples
+    FROM private_metrics WHERE event_type = 'web_vital' AND created_at >= ? GROUP BY metric_name`).bind(since).all<Record<string, unknown>>()).results ?? [];
+  const outbound = { cabinet: 0, telegram: 0 };
+  for (const row of outboundRows) if (row.destination === "cabinet" || row.destination === "telegram") outbound[row.destination] = Number(row.total);
+  return {
+    days: safeDays,
+    outbound,
+    vitals: vitalRows.map((row) => ({ name: String(row.metric_name), average: Number(row.average), samples: Number(row.samples) })),
+  };
 }
 
 export async function getAlertState(key: string) {

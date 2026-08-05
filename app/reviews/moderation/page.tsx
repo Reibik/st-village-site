@@ -12,6 +12,7 @@ export default function ReviewsModerationPage() {
       <span className="eyebrow">Закрытый раздел</span>
       <h1>Модерация отзывов</h1>
       <p>Введите значение REVIEWS_ADMIN_TOKEN. Токен используется только для запросов к серверу и не сохраняется в браузере.</p>
+      <a className="text-link" href="/status/management">Управление статусом и аналитика →</a>
     </header>
     <ReviewsModeration />
   </main>;

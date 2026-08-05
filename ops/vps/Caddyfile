@@ -23,6 +23,48 @@ stvillage.ru {
     import security_headers
     encode zstd gzip
 
+    @review_moderation_page path /reviews/moderation*
+    basic_auth @review_moderation_page {
+        {$ST_VILLAGE_ADMIN_AUTH_USER} {$ST_VILLAGE_ADMIN_AUTH_HASH}
+    }
+
+    @review_moderation_api {
+        path /api/reviews
+        method PATCH DELETE
+    }
+    basic_auth @review_moderation_api {
+        {$ST_VILLAGE_ADMIN_AUTH_USER} {$ST_VILLAGE_ADMIN_AUTH_HASH}
+    }
+
+    @review_queue_api {
+        path /api/reviews
+        query status=*
+    }
+    basic_auth @review_queue_api {
+        {$ST_VILLAGE_ADMIN_AUTH_USER} {$ST_VILLAGE_ADMIN_AUTH_HASH}
+    }
+
+    @status_management path /status/management* /api/admin/*
+    basic_auth @status_management {
+        {$ST_VILLAGE_ADMIN_AUTH_USER} {$ST_VILLAGE_ADMIN_AUTH_HASH}
+    }
+
+    @status_analytics {
+        path /api/analytics
+        method GET
+    }
+    basic_auth @status_analytics {
+        {$ST_VILLAGE_ADMIN_AUTH_USER} {$ST_VILLAGE_ADMIN_AUTH_HASH}
+    }
+
+    @status_management_write {
+        path /api/incidents
+        method POST
+    }
+    basic_auth @status_management_write {
+        {$ST_VILLAGE_ADMIN_AUTH_USER} {$ST_VILLAGE_ADMIN_AUTH_HASH}
+    }
+
     @immutable path /assets/*
     header @immutable Cache-Control "public, max-age=31536000, immutable"
 

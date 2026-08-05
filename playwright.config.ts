@@ -34,7 +34,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "pnpm exec vinext dev -p 4173 -H 127.0.0.1",
+    command: "node ./node_modules/vinext/dist/cli.js dev -p 4173 -H 127.0.0.1",
     url: "http://127.0.0.1:4173/api/health",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

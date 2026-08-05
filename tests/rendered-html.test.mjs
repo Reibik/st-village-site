@@ -18,7 +18,7 @@ test("server-renders the ST VILLAGE public home page", async () => {
   const response = await worker.fetch(new Request("http://localhost/", { headers: { accept: "text/html" } }), env, context);
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
-  assert.equal(response.headers.get("x-st-village-release"), "1.0.0");
+  assert.equal(response.headers.get("x-st-village-release"), "1.1.0");
   assert.equal(response.headers.get("x-st-village-channel"), "stable");
 
   const html = await response.text();
@@ -28,7 +28,7 @@ test("server-renders the ST VILLAGE public home page", async () => {
   assert.match(html, /Открыть личный кабинет/);
   assert.match(html, /https:\/\/cabinet\.stvillage\.ru/);
   assert.match(html, /https:\/\/t\.me\/st_village_vpn_bot/);
-  assert.match(html, /class="footer-version"[^>]*>v(?:<!-- -->)?1\.0\.0<\/a>/);
+  assert.match(html, /class="footer-version"[^>]*>v(?:<!-- -->)?1\.1\.0<\/a>/);
   assert.match(html, /href="\/release"/);
   assert.match(html, /Попробуйте ST VILLAGE перед оплатой/);
   assert.match(html, /5 ГБ/);
@@ -50,7 +50,7 @@ test("all public pages render their expected content", async () => {
     ["/news", "Новости ST VILLAGE"],
     ["/reviews", "Честная обратная связь"],
     ["/support", "Помощь, когда она нужна"],
-    ["/release", "ST VILLAGE готов к стабильной работе"],
+    ["/release", "ST VILLAGE готов к полноценной эксплуатации"],
     ["/legal/privacy", "Политика конфиденциальности 🚀ST VILLAGE🚀"],
     ["/legal/terms", "Публичная оферта сервиса 🚀ST VILLAGE🚀"],
   ];
@@ -109,9 +109,9 @@ test("version endpoint detects a newer deployment without being cached", async (
   const currentPayload = await current.json();
   assert.equal(typeof currentPayload.version, "string");
   assert.equal(currentPayload.version.length > 0, true);
-  assert.equal(currentPayload.release, "1.0.0");
+  assert.equal(currentPayload.release, "1.1.0");
   assert.equal(currentPayload.channel, "stable");
-  assert.equal(currentPayload.releaseName, "Стабильный запуск");
+  assert.equal(currentPayload.releaseName, "Управление и надёжность");
   assert.equal(currentPayload.updateAvailable, false);
 
   const stale = await worker.fetch(new Request("http://localhost/api/version?current=previous-build"), env, context);
@@ -396,7 +396,7 @@ test("observability, incidents, regional checks and private analytics are wired"
   assert.match(storage, /status_samples/);
   assert.match(storage, /private_metrics/);
   assert.match(storage, /node:fs\/promises/);
-  assert.match(storage, /\/var\/tmp\/st-village-observability-/);
+  assert.match(storage, /\/opt\/st-village-site\/data\/observability\.json/);
   assert.match(alerts, /STATUS_ALERT_TELEGRAM_BOT_TOKEN/);
   assert.match(alerts, /previous === fingerprint/);
   assert.match(regional, /api\.globalping\.io\/v1\/measurements/);
@@ -429,7 +429,7 @@ test("reviews are moderated and the checklist contains no unfinished items", asy
   const checklist = await readFile(new URL("../SITE_IMPROVEMENT_CHECKLIST.md", import.meta.url), "utf8");
   assert.match(reviewRoute, /REVIEWS_ADMIN_TOKEN/);
   assert.match(reviewRoute, /pendingModeration/);
-  assert.match(reviewRoute, /getPendingReviews/);
+  assert.match(reviewRoute, /getManagedReviews/);
   assert.match(reviewRoute, /notifyReviewSubmission/);
   assert.match(reviewBoard, /const formElement = event\.currentTarget/);
   assert.match(reviewBoard, /formElement\.reset\(\)/);
@@ -450,6 +450,19 @@ test("reviews are moderated and the checklist contains no unfinished items", asy
   }
 });
 
+test("public review submissions are rate limited before storage work", async () => {
+  const statuses = [];
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const response = await worker.fetch(new Request("http://localhost/api/reviews", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-forwarded-for": "198.51.100.77" },
+      body: JSON.stringify({ displayName: "A", rating: 8, text: "short" }),
+    }), env, context);
+    statuses.push(response.status);
+  }
+  assert.deepEqual(statuses, [400, 400, 400, 400, 429]);
+});
+
 test("accessibility and performance safeguards cover the new public surfaces", async () => {
   const header = await readFile(new URL("../src/components/site-header.tsx", import.meta.url), "utf8");
   const status = await readFile(new URL("../src/features/status/status-dashboard.tsx", import.meta.url), "utf8");
@@ -466,7 +479,7 @@ test("accessibility and performance safeguards cover the new public surfaces", a
   assert.match(packageJson.scripts["release:check"], /test:performance/);
 });
 
-test("v1.0.0 stable release safeguards are present", async () => {
+test("v1.1.0 operational release safeguards are present", async () => {
   const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
   const workflow = await readFile(new URL("../.github/workflows/quality.yml", import.meta.url), "utf8");
   const caddy = await readFile(new URL("../ops/vps/Caddyfile", import.meta.url), "utf8");
@@ -477,7 +490,7 @@ test("v1.0.0 stable release safeguards are present", async () => {
   const releasePage = await readFile(new URL("../app/release/page.tsx", import.meta.url), "utf8");
   const worker = await readFile(new URL("../worker/index.ts", import.meta.url), "utf8");
 
-  assert.equal(packageJson.version, "1.0.0");
+  assert.equal(packageJson.version, "1.1.0");
   assert.match(packageJson.scripts.typecheck, /tsc --noEmit/);
   assert.match(packageJson.scripts["release:check"], /lint.*typecheck.*build.*rendered-html/s);
   assert.match(workflow, /pnpm release:check/);
@@ -491,11 +504,50 @@ test("v1.0.0 stable release safeguards are present", async () => {
   assert.match(security, /Contact: mailto:admin@stvillage\.ru/);
   assert.match(security, /Canonical: https:\/\/stvillage\.ru\/\.well-known\/security\.txt/);
   assert.match(releaseConfig, /channel: "stable"/);
-  assert.match(releaseConfig, /name: "Стабильный запуск"/);
-  assert.match(releasePage, /Первый стабильный релиз/);
+  assert.match(releaseConfig, /name: "Управление и надёжность"/);
+  assert.match(releasePage, /полноценной эксплуатации/);
   assert.match(worker, /X-ST-Village-Release/);
   assert.match(worker, /X-ST-Village-Channel/);
   assert.match(changelog, /1\.0\.0 — стабильный запуск/);
+});
+
+test("production operations include durable storage, verified backups, protected admin tools and independent checks", async () => {
+  const caddy = await readFile(new URL("../ops/vps/Caddyfile", import.meta.url), "utf8");
+  const productionService = await readFile(new URL("../ops/vps/st-village-site.service", import.meta.url), "utf8");
+  const devService = await readFile(new URL("../ops/vps/st-village-dev-site.service", import.meta.url), "utf8");
+  const deploy = await readFile(new URL("../ops/vps/deploy.sh", import.meta.url), "utf8");
+  const backup = await readFile(new URL("../ops/vps/backup.sh", import.meta.url), "utf8");
+  const backupTimer = await readFile(new URL("../ops/vps/st-village-backup.timer", import.meta.url), "utf8");
+  const adminInstaller = await readFile(new URL("../ops/vps/install-admin-auth.sh", import.meta.url), "utf8");
+  const rateLimit = await readFile(new URL("../src/server/security/rate-limit.ts", import.meta.url), "utf8");
+  const reviewsRoute = await readFile(new URL("../app/api/reviews/route.ts", import.meta.url), "utf8");
+  const incidentsRoute = await readFile(new URL("../app/api/incidents/route.ts", import.meta.url), "utf8");
+  const analyticsRoute = await readFile(new URL("../app/api/analytics/route.ts", import.meta.url), "utf8");
+  const management = await readFile(new URL("../src/features/status/status-management.tsx", import.meta.url), "utf8");
+  const uptimeWorkflow = await readFile(new URL("../.github/workflows/external-uptime.yml", import.meta.url), "utf8");
+  const codeql = await readFile(new URL("../.github/workflows/codeql.yml", import.meta.url), "utf8");
+  const dependabot = await readFile(new URL("../.github/dependabot.yml", import.meta.url), "utf8");
+
+  assert.match(productionService, /ReadWritePaths=\/opt\/st-village-site\/data/);
+  assert.match(devService, /ReadWritePaths=\/opt\/st-village-dev\/data/);
+  assert.match(deploy, /Preserve legacy data from PrivateTmp/);
+  assert.match(backup, /sha256sum/);
+  assert.match(backup, /tar --list/);
+  assert.match(backup, /RESTIC_REPOSITORY/);
+  assert.match(backupTimer, /OnCalendar=\*-\*-\* 02:25:00/);
+  assert.match(caddy, /ST_VILLAGE_ADMIN_AUTH_HASH/);
+  assert.match(caddy, /@status_analytics/);
+  assert.match(adminInstaller, /caddy hash-password --algorithm bcrypt/);
+  assert.match(rateLimit, /RATE_LIMIT_SECRET/);
+  assert.match(rateLimit, /Retry-After/);
+  assert.match(reviewsRoute, /checkRateLimit/);
+  assert.match(incidentsRoute, /readJsonLimited/);
+  assert.match(analyticsRoute, /getPrivateMetricsSummary/);
+  assert.match(management, /X-ST-Village-Status-Token/);
+  assert.match(management, /Новая публикация/);
+  assert.match(uptimeWorkflow, /cron: "\*\/5 \* \* \* \*"/);
+  assert.match(codeql, /github\/codeql-action/);
+  assert.match(dependabot, /package-ecosystem: npm/);
 });
 
 test("the dev stand is isolated, protected, and automatically updated", async () => {

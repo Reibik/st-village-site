@@ -4,6 +4,22 @@ async function prepare(page: Page) {
   await page.addInitScript(() => localStorage.setItem("st-theme", "dark"));
   await page.route("**/api/pricing", (route) => route.abort());
   await page.route("**/api/news?**", (route) => route.abort());
+  await page.route("**/api/live-status", (route) => route.fulfill({ json: {
+    status: "degraded", generatedAt: "2026-08-02T04:00:00.000Z", refreshAfterSeconds: 60,
+    totals: { online: 4, total: 5, maintenance: 0, uptime30: 99.82, averageLatencyMs: 112 },
+    incidents: [{
+      id: "incident-1", title: "Технические работы на сервере", severity: "minor", status: "monitoring",
+      startedAt: "2026-08-02T03:00:00.000Z", latestUpdate: "Следим за восстановлением доступности.",
+      affected: [{ name: "Польша #1", countryCode: "PL" }],
+    }],
+    servers: [
+      { id: "pl-1", name: "Польша #1", countryCode: "PL", status: "outage", uptime30: 98.7, latencyMs: null, members: 1, membersOnline: 0 },
+      { id: "auto", name: "Авто выбор", countryCode: "CH", status: "operational", uptime30: 99.9, latencyMs: 96, members: 4, membersOnline: 4 },
+      { id: "de-1", name: "Германия #1", countryCode: "DE", status: "operational", uptime30: 99.98, latencyMs: 84, members: 1, membersOnline: 1 },
+      { id: "fi-1", name: "Финляндия #1", countryCode: "FI", status: "operational", uptime30: 100, latencyMs: 138, members: 1, membersOnline: 1 },
+      { id: "se-1", name: "Швеция #1", countryCode: "SE", status: "operational", uptime30: 99.95, latencyMs: 130, members: 1, membersOnline: 1 },
+    ],
+  } }));
   await page.route("**/api/status", (route) => route.fulfill({ json: {
     status: "operational", generatedAt: "2026-08-02T04:00:00.000Z", refreshAfterSeconds: 30,
     services: [
@@ -97,6 +113,9 @@ test("прозрачный статус", async ({ page }) => {
   await prepare(page);
   await page.goto("/status", { waitUntil: "networkidle" });
   const content = page.locator(".page-content");
+  await expect(page.locator(".live-status-metrics")).toBeVisible();
+  await expect(page.locator(".live-server-card")).toHaveCount(5);
+  await expect(page.getByRole("link", { name: "Открыть полный мониторинг ↗" })).toHaveAttribute("href", "https://status.stvillage.ru");
   await expect(page.locator(".status-metrics")).toBeVisible();
   await expect(page.locator(".regional-card")).toHaveCount(3);
   await settle(page);

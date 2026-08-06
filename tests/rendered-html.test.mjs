@@ -145,6 +145,42 @@ test("unconfigured integrations fail honestly", async () => {
   assert.doesNotMatch(JSON.stringify(remnawavePayload), /stack|password|token/i);
 });
 
+test("live status proxy returns a compact sanitized summary", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init) => {
+    if (String(input) === "https://status.stvillage.ru/api/summary") {
+      assert.equal(init?.headers?.accept, "application/json");
+      return Response.json({
+        lastCheckTs: 1786044398,
+        pollInterval: 300,
+        totals: { online: 1, total: 2, maintenance: 0, uptime30: 99.5, avgLatency: 83 },
+        servers: [
+          { sid: "de-1", name: "Германия #1", cc: "de", online: true, maintenance: false, uptime30: 100, latencyMs: 83, members: 1, membersOnline: 1, days: [{ private: "history" }] },
+          { sid: "lte", name: "LTE", cc: "", online: false, maintenance: false, uptime30: 0, latencyMs: 0, members: 1, membersOnline: 0 },
+        ],
+        incidents: [{ id: 1, title: "Проверка", severity: "minor", status: "monitoring", startedTs: 1786040000, affected: [{ name: "LTE", cc: "" }], updates: [{ body: "Наблюдаем" }] }],
+        secret: "must-not-leak",
+      });
+    }
+    return originalFetch(input, init);
+  };
+  try {
+    const response = await worker.fetch(new Request("http://localhost/api/live-status"), env, context);
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("cache-control") ?? "", /s-maxage=30/);
+    const payload = await response.json();
+    assert.equal(payload.status, "degraded");
+    assert.equal(payload.refreshAfterSeconds, 60);
+    assert.equal(payload.servers.length, 2);
+    assert.equal(payload.servers[0].countryCode, "DE");
+    assert.equal(payload.servers[1].latencyMs, null);
+    assert.equal(payload.incidents[0].latestUpdate, "Наблюдаем");
+    assert.doesNotMatch(JSON.stringify(payload), /must-not-leak|days|private/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("connection center uses official Happ and INCY downloads for every platform", async () => {
   const config = await readFile(new URL("../src/config/connection-apps.ts", import.meta.url), "utf8");
   const wizard = await readFile(new URL("../src/features/connect/connection-wizard.tsx", import.meta.url), "utf8");

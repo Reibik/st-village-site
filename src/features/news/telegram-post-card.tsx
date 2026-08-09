@@ -1,5 +1,7 @@
 "use client";
 
+import { createNewsArticleJsonLd, serializeJsonLd } from "@/src/config/structured-data";
+
 /* Telegram media has dynamic signed URLs and dimensions, so it is intentionally
    served directly from Telegram's allowlisted image CDN without the optimizer. */
 /* eslint-disable @next/next/no-img-element */
@@ -22,8 +24,10 @@ function formatDate(value: string | null) {
 }
 
 export function TelegramPostCard({ post }: { post: TelegramPost }) {
+  const jsonLd = createNewsArticleJsonLd(post);
   return (
     <article className="telegram-post-card">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
       <div className="telegram-post-accent" aria-hidden="true" />
       <header className="telegram-post-header">
         <span className="telegram-post-logo" aria-hidden="true">ST</span>

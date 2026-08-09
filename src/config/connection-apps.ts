@@ -45,7 +45,7 @@ export const CONNECTION_APPS: Record<ConnectionAppId, ConnectionApp> = {
     downloads: {
       ios: [
         { label: "Скачать в App Store", url: "https://apps.apple.com/us/app/happ-proxy-utility/id6504287215", note: "iPhone и iPad" },
-        { label: "App Store для РФ", url: "https://apps.apple.com/ru/app/happ-proxy-utility/id6783623643", note: "Альтернативная карточка" },
+        { label: "TestFlight для РФ", url: "https://testflight.apple.com/join/1bKEcMub", note: "Официальная тестовая сборка" },
       ],
       android: [
         { label: "Скачать в Google Play", url: "https://play.google.com/store/apps/details?id=com.happproxy" },

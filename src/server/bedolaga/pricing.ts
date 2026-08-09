@@ -60,6 +60,10 @@ const BOOTSTRAP_SNAPSHOT: PricingSnapshot = {
   ],
 };
 
+export function getBootstrapPricing(): PricingSnapshot {
+  return BOOTSTRAP_SNAPSHOT;
+}
+
 let cached: CachedSnapshot | null = null;
 let pending: Promise<PricingSnapshot> | null = null;
 

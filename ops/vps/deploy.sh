@@ -4,6 +4,8 @@ set -Eeuo pipefail
 app_root="/opt/st-village-site"
 repository="${app_root}/repository"
 releases="${app_root}/releases"
+data_dir="${app_root}/data"
+data_file="${data_dir}/observability.json"
 branch="main"
 lock_file="/run/lock/st-village-deploy.lock"
 
@@ -11,6 +13,7 @@ exec 9>"$lock_file"
 flock -n 9 || exit 0
 
 install -d -m 755 "$app_root" "$releases"
+install -d -o stvillage-web -g stvillage-web -m 750 "$data_dir"
 
 if [[ ! -d "${repository}/.git" ]]; then
   git clone --filter=blob:none --no-checkout https://github.com/Reibik/st-village-site.git "$repository"
@@ -43,6 +46,19 @@ export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=512}"
 cd "$release"
 pnpm install --frozen-lockfile --prefer-offline --child-concurrency=2 --network-concurrency=8
 pnpm build
+
+# Preserve legacy data from PrivateTmp before the first durable-storage restart.
+if [[ ! -s "$data_file" ]]; then
+  service_pid="$(systemctl show -p MainPID --value st-village-site.service 2>/dev/null || true)"
+  if [[ "$service_pid" =~ ^[1-9][0-9]*$ ]]; then
+    for legacy_file in "/proc/${service_pid}/root/var/tmp"/st-village-observability-*.json; do
+      if [[ -f "$legacy_file" && ! -L "$legacy_file" ]]; then
+        install -o stvillage-web -g stvillage-web -m 600 "$legacy_file" "$data_file"
+        break
+      fi
+    done
+  fi
+fi
 
 ln -sfn "$release" "${app_root}/current.next"
 mv -Tf "${app_root}/current.next" "${app_root}/current"

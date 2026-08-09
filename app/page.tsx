@@ -5,10 +5,12 @@ import { FaqList } from "@/src/components/faq-list";
 import { SectionHeading } from "@/src/components/section-heading";
 import { PlatformStrip } from "@/src/components/platform-strip";
 import { TrialOffer } from "@/src/components/trial-offer";
+import { TrustPanel } from "@/src/components/trust-panel";
 import { TelegramNewsFeed } from "@/src/features/news/telegram-news-feed";
 import { PricingCatalog } from "@/src/features/pricing/pricing-catalog";
 import { homeFaqs, locations } from "@/src/config/content";
 import { CABINET_URL, TELEGRAM_BOT_URL } from "@/src/config/links";
+import { createFaqJsonLd, serializeJsonLd } from "@/src/config/structured-data";
 
 const advantages = [
   {
@@ -33,6 +35,8 @@ const steps = [
   ["02", "Перейдите в кабинет", "Управляйте сервисом на отдельном клиентском портале."],
   ["03", "Настройте устройство", "Следуйте инструкции для своей платформы."],
 ];
+
+const faqJsonLd = createFaqJsonLd(homeFaqs);
 
 export default function Home() {
   return (
@@ -69,8 +73,10 @@ export default function Home() {
       <PlatformStrip />
 
       <section className="section-shell trial-section" aria-label="Пробный период ST VILLAGE">
-        <TrialOffer />
+      <TrialOffer />
       </section>
+
+      <TrustPanel />
 
       <section className="section-shell section-block" id="features">
         <SectionHeading eyebrow="Основа сервиса" title="Всё необходимое. Без лишнего." text="ST VILLAGE объединяет подключение, управление и поддержку в цельный пользовательский путь." />
@@ -153,7 +159,8 @@ export default function Home() {
         <TelegramNewsFeed limit={2} compact />
       </section>
 
-      <section className="section-shell section-block faq-layout">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(faqJsonLd) }} />
+      <section className="section-shell section-block faq-layout" id="faq">
         <SectionHeading eyebrow="Вопросы и ответы" title="Коротко о главном" text="Если ответа здесь нет, база знаний и поддержка помогут разобраться дальше." />
         <FaqList items={homeFaqs} />
       </section>

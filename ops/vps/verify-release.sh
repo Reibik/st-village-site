@@ -2,14 +2,14 @@
 set -Eeuo pipefail
 
 base_url="${1:-https://stvillage.ru}"
-expected_release="${2:-1.0.0}"
+expected_release="${2:-1.2.0}"
 
 check_url() {
   local path="$1"
   curl --fail --silent --show-error --location --max-time 15 "${base_url}${path}" >/dev/null
 }
 
-for path in / /pricing /connect /status /news /support /release /robots.txt /sitemap.xml /manifest.webmanifest /api/health; do
+for path in / /pricing /connect /status /news /reviews /support /release /robots.txt /sitemap.xml /manifest.webmanifest /api/health /api/observability; do
   check_url "$path"
 done
 

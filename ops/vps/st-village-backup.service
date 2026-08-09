@@ -1,0 +1,18 @@
+[Unit]
+Description=ST VILLAGE encrypted-ready verified backup
+After=local-fs.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+EnvironmentFile=-/etc/st-village/backup.env
+ExecStart=/usr/local/sbin/st-village-backup
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/var/backups/st-village
+CapabilityBoundingSet=
+RestrictSUIDSGID=true
+LockPersonality=true

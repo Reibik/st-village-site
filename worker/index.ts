@@ -2,6 +2,9 @@
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
 import { SITE_RELEASE } from "../src/config/release";
+import { collectStatus } from "../src/server/status/collector";
+import { notifyStatusChange } from "../src/server/status/alerts";
+import { cleanupObservability, recordStatusSnapshot } from "../src/server/storage/database";
 
 interface Env {
   ASSETS: Fetcher;
@@ -68,6 +71,12 @@ const worker = {
     }
 
     return withReleaseHeaders(await handler.fetch(request, env, ctx));
+  },
+  async scheduled(_event: ScheduledEvent, _env: Env, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil((async () => {
+      const snapshot = await collectStatus();
+      await Promise.allSettled([recordStatusSnapshot(snapshot), notifyStatusChange(snapshot), cleanupObservability()]);
+    })());
   },
 };
 

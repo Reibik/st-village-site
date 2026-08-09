@@ -50,4 +50,3 @@ export const schemaStatements = [
     updated_at TEXT NOT NULL
   )`,
 ] as const;
-

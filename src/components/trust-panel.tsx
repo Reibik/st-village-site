@@ -14,4 +14,3 @@ export function TrustPanel() {
     <div className="trust-grid">{trustFacts.map((fact) => <article className="trust-card" key={fact.label}><strong>{fact.value}</strong><span>{fact.label}</span><small>{fact.note}</small></article>)}</div>
   </section>;
 }
-

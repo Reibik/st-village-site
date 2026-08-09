@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 base_url="${1:-https://stvillage.ru}"
-expected_release="${2:-1.1.0}"
+expected_release="${2:-1.2.0}"
 
 check_url() {
   local path="$1"

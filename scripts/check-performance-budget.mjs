@@ -24,4 +24,3 @@ assert.match(home, /fetchPriority="high"/);
 assert.match(home, /sizes="\(max-width:/);
 for (const metric of ["CLS", "FCP", "INP", "LCP", "TTFB"]) assert.match(observability, new RegExp(`"${metric}"`));
 console.log("Пороговые значения изображений и сбор Core Web Vitals настроены.");
-

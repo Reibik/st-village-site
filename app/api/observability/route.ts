@@ -15,4 +15,3 @@ export async function GET(request: Request) {
     headers: { "Cache-Control": "public, s-maxage=120, stale-while-revalidate=300" },
   });
 }
-

@@ -8,25 +8,25 @@ import { createPageMetadata } from "@/src/config/seo";
 
 export const metadata: Metadata = createPageMetadata({
   title: `Релиз v${SITE_RELEASE.version}`,
-  description: "ST VILLAGE v1.1.0 — модерация отзывов, управление инцидентами, постоянное хранение, резервные копии и усиленная эксплуатационная надёжность.",
+  description: "ST VILLAGE v1.2.0 — живой мониторинг серверов, отзывы с модерацией, улучшенная защита и автоматический контроль качества.",
   path: "/release",
 });
 
 const releaseHighlights = [
   {
     index: "01",
-    title: "Управление без терминала",
-    text: "Отзывы, инциденты, технические работы и приватные показатели доступны в защищённых административных разделах.",
+    title: "Статус в реальном времени",
+    text: "Состояние серверов, задержка, аптайм за 30 дней и активные инциденты собраны на одной понятной странице.",
   },
   {
     index: "02",
-    title: "Данные переживают перезапуск",
-    text: "Отзывы, история доступности, инциденты и метрики сохраняются постоянно и ежедневно попадают в проверяемую резервную копию.",
+    title: "Обратная связь под контролем",
+    text: "Отзывы проходят ручную модерацию, а администратор получает уведомление о каждой новой публикации в Telegram.",
   },
   {
     index: "03",
-    title: "Защита и внешний контроль",
-    text: "Rate limiting, отдельная защита админ-маршрутов, CodeQL и независимые проверки дополняют автоматический откат VPS.",
+    title: "Качество каждого обновления",
+    text: "Сборка, безопасность, внешние ссылки и внешний вид на компьютере и телефоне проверяются автоматически до публикации.",
   },
 ] as const;
 
@@ -34,16 +34,16 @@ export default function ReleasePage() {
   return <>
     <PageHero
       eyebrow={`Стабильный канал · v${SITE_RELEASE.version}`}
-      title="ST VILLAGE готов к полноценной эксплуатации"
-      text="Версия 1.1.0 завершает административные сценарии, усиливает защиту и делает пользовательские данные устойчивыми к перезапускам и сбоям."
+      title="Живой мониторинг и надёжная эксплуатация"
+      text="Версия 1.2.0 делает состояние серверов прозрачным для клиентов, улучшает обратную связь и усиливает автоматический контроль качества."
     />
 
     <section className="section-shell page-content release-page" aria-labelledby="release-highlights-title">
       <div className="release-banner glass-card">
         <div>
           <div className="eyebrow">{SITE_RELEASE.name}</div>
-          <h2 id="release-highlights-title">Управление и надёжность</h2>
-          <p>Подготовлен <time dateTime={SITE_RELEASE.releasedAt}>2 августа 2026 года</time>. Выпуск закрывает эксплуатационные задачи перед переносом проверенной dev-версии на основной сайт.</p>
+          <h2 id="release-highlights-title">Мониторинг и качество</h2>
+          <p>Выпущен <time dateTime={SITE_RELEASE.releasedAt}>9 августа 2026 года</time>. Обновление объединяет живой статус серверов, отзывы с модерацией и усиленную предрелизную проверку.</p>
         </div>
         <span className="release-badge" aria-label={`Версия ${SITE_RELEASE.version}`}>v{SITE_RELEASE.version}</span>
       </div>
@@ -75,7 +75,7 @@ export default function ReleasePage() {
           <div className="release-entry-meta"><strong>{`v${release.version}`}</strong><span>{release.date}</span></div>
           <ul>{release.items.map((item) => <li key={item}>{item}</li>)}</ul>
         </article>)}</div>
-        <p className="release-operations-link">Оперативная информация об инцидентах и плановых работах публикуется на <Link href="/status#incidents">странице состояния</Link>.</p>
+        <p className="release-operations-link">Текущее состояние серверов, задержка и активные инциденты доступны на <Link href="/status">странице статуса</Link>.</p>
       </section>
     </section>
 

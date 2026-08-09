@@ -12,7 +12,6 @@ function send(payload: Record<string, unknown>) {
     void fetch("/api/analytics", { method: "POST", body, keepalive: true, headers: { "Content-Type": "application/json" } });
   }
 }
-
 export function SiteObservability() {
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
@@ -92,4 +91,3 @@ export function SiteObservability() {
 
   return null;
 }
-

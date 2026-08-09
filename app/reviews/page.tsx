@@ -15,4 +15,3 @@ export default function ReviewsPage() {
     <section className="section-shell page-content"><ReviewsBoard /></section>
   </>;
 }
-

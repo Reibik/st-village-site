@@ -18,7 +18,7 @@ test("server-renders the ST VILLAGE public home page", async () => {
   const response = await worker.fetch(new Request("http://localhost/", { headers: { accept: "text/html" } }), env, context);
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
-  assert.equal(response.headers.get("x-st-village-release"), "1.1.0");
+  assert.equal(response.headers.get("x-st-village-release"), "1.2.0");
   assert.equal(response.headers.get("x-st-village-channel"), "stable");
 
   const html = await response.text();
@@ -28,7 +28,7 @@ test("server-renders the ST VILLAGE public home page", async () => {
   assert.match(html, /Открыть личный кабинет/);
   assert.match(html, /https:\/\/cabinet\.stvillage\.ru/);
   assert.match(html, /https:\/\/t\.me\/st_village_vpn_bot/);
-  assert.match(html, /class="footer-version"[^>]*>v(?:<!-- -->)?1\.1\.0<\/a>/);
+  assert.match(html, /class="footer-version"[^>]*>v(?:<!-- -->)?1\.2\.0<\/a>/);
   assert.match(html, /href="\/release"/);
   assert.match(html, /Попробуйте ST VILLAGE перед оплатой/);
   assert.match(html, /5 ГБ/);
@@ -50,7 +50,7 @@ test("all public pages render their expected content", async () => {
     ["/news", "Новости ST VILLAGE"],
     ["/reviews", "Честная обратная связь"],
     ["/support", "Помощь, когда она нужна"],
-    ["/release", "ST VILLAGE готов к полноценной эксплуатации"],
+    ["/release", "Живой мониторинг и надёжная эксплуатация"],
     ["/legal/privacy", "Политика конфиденциальности 🚀ST VILLAGE🚀"],
     ["/legal/terms", "Публичная оферта сервиса 🚀ST VILLAGE🚀"],
   ];
@@ -109,9 +109,9 @@ test("version endpoint detects a newer deployment without being cached", async (
   const currentPayload = await current.json();
   assert.equal(typeof currentPayload.version, "string");
   assert.equal(currentPayload.version.length > 0, true);
-  assert.equal(currentPayload.release, "1.1.0");
+  assert.equal(currentPayload.release, "1.2.0");
   assert.equal(currentPayload.channel, "stable");
-  assert.equal(currentPayload.releaseName, "Управление и надёжность");
+  assert.equal(currentPayload.releaseName, "Мониторинг и качество");
   assert.equal(currentPayload.updateAvailable, false);
 
   const stale = await worker.fetch(new Request("http://localhost/api/version?current=previous-build"), env, context);
@@ -515,7 +515,7 @@ test("accessibility and performance safeguards cover the new public surfaces", a
   assert.match(packageJson.scripts["release:check"], /test:performance/);
 });
 
-test("v1.1.0 operational release safeguards are present", async () => {
+test("v1.2.0 operational release safeguards are present", async () => {
   const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
   const workflow = await readFile(new URL("../.github/workflows/quality.yml", import.meta.url), "utf8");
   const caddy = await readFile(new URL("../ops/vps/Caddyfile", import.meta.url), "utf8");
@@ -526,7 +526,7 @@ test("v1.1.0 operational release safeguards are present", async () => {
   const releasePage = await readFile(new URL("../app/release/page.tsx", import.meta.url), "utf8");
   const worker = await readFile(new URL("../worker/index.ts", import.meta.url), "utf8");
 
-  assert.equal(packageJson.version, "1.1.0");
+  assert.equal(packageJson.version, "1.2.0");
   assert.match(packageJson.scripts.typecheck, /tsc --noEmit/);
   assert.match(packageJson.scripts["release:check"], /lint.*typecheck.*build.*rendered-html/s);
   assert.match(workflow, /pnpm release:check/);
@@ -540,8 +540,8 @@ test("v1.1.0 operational release safeguards are present", async () => {
   assert.match(security, /Contact: mailto:admin@stvillage\.ru/);
   assert.match(security, /Canonical: https:\/\/stvillage\.ru\/\.well-known\/security\.txt/);
   assert.match(releaseConfig, /channel: "stable"/);
-  assert.match(releaseConfig, /name: "Управление и надёжность"/);
-  assert.match(releasePage, /полноценной эксплуатации/);
+  assert.match(releaseConfig, /name: "Мониторинг и качество"/);
+  assert.match(releasePage, /Живой мониторинг и надёжная эксплуатация/);
   assert.match(worker, /X-ST-Village-Release/);
   assert.match(worker, /X-ST-Village-Channel/);
   assert.match(changelog, /1\.0\.0 — стабильный запуск/);

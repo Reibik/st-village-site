@@ -88,13 +88,19 @@ export const newsCollectionJsonLd = {
 };
 
 function plainText(html: string) {
+  const entities: Record<string, string> = {
+    "&nbsp;": " ",
+    "&#160;": " ",
+    "&amp;": "&",
+    "&quot;": "\"",
+    "&#39;": "'",
+    "&apos;": "'",
+  };
+
   return html
     .replace(/<br\s*\/?>/gi, " ")
     .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;|&#160;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&quot;/gi, "\"")
-    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&(?:nbsp|amp|quot|apos|#39|#160);/gi, (entity) => entities[entity.toLowerCase()] ?? entity)
     .replace(/\s+/g, " ")
     .trim();
 }

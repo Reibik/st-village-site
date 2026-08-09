@@ -363,6 +363,7 @@ test("FAQ, pricing and news expose extended Schema.org data", async () => {
   }));
   const [home, pricing, news] = pages;
   const newsCard = await readFile(new URL("../src/features/news/telegram-post-card.tsx", import.meta.url), "utf8");
+  const structuredData = await readFile(new URL("../src/config/structured-data.ts", import.meta.url), "utf8");
 
   assert.match(home, /"@type":"FAQPage"/);
   assert.match(home, /"@type":"Question"/);
@@ -373,6 +374,8 @@ test("FAQ, pricing and news expose extended Schema.org data", async () => {
   assert.match(news, /"@type":"CollectionPage"/);
   assert.match(newsCard, /createNewsArticleJsonLd/);
   assert.match(newsCard, /type="application\/ld\+json"/);
+  assert.match(structuredData, /&\(\?:nbsp\|amp\|quot\|apos\|#39\|#160\);/);
+  assert.doesNotMatch(structuredData, /\.replace\(\/&amp;\/gi/);
 });
 
 test("official client links and visual baselines are checked automatically", async () => {

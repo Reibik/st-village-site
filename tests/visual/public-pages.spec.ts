@@ -117,7 +117,10 @@ test("прозрачный статус", async ({ page }) => {
   await expect(page.locator(".live-server-card")).toHaveCount(5);
   await expect(page.getByRole("link", { name: "Открыть полный мониторинг ↗" })).toHaveAttribute("href", "https://status.stvillage.ru");
   await expect(page.locator(".status-metrics")).toBeVisible();
-  await expect(page.locator(".regional-card")).toHaveCount(3);
+  await expect(page.getByRole("heading", { name: "Серверные узлы" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Стабильность во времени" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Доступность снаружи" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Инциденты и технические работы" })).toHaveCount(0);
   await settle(page);
   await expect(content).toHaveScreenshot("status-observability.png");
 });

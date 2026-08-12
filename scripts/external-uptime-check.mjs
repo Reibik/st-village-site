@@ -1,7 +1,12 @@
 const targets = [
   { name: "Сайт", url: "https://stvillage.ru/api/health", expect: /"status"\s*:\s*"ok"/ },
   { name: "Страница статуса", url: "https://stvillage.ru/status", expect: /ST VILLAGE|Статус|Состояние/i },
-  { name: "Личный кабинет", url: "https://cabinet.stvillage.ru", expect: /ST VILLAGE|cabinet|кабинет/i },
+  {
+    name: "Личный кабинет",
+    url: "https://cabinet.stvillage.ru",
+    contentType: /text\/html/i,
+    expect: /<div\s+id=["']root["']><\/div>|<script[^>]+type=["']module["'][^>]+src=["']\/assets\/index-/i,
+  },
   { name: "Telegram-бот", url: "https://t.me/st_village_vpn_bot", expect: /st_village_vpn_bot|Telegram/i },
 ];
 
@@ -15,8 +20,13 @@ async function probe(target) {
         headers: { "User-Agent": "ST-VILLAGE-External-Uptime/1.0" },
       });
       const text = (await response.text()).slice(0, 250_000);
-      if (response.ok && target.expect.test(text)) return { name: target.name, url: target.url, ok: true, status: response.status };
-      lastError = `HTTP ${response.status} или неожиданный ответ`;
+      const validType = !target.contentType || target.contentType.test(response.headers.get("content-type") ?? "");
+      if (response.ok && validType && target.expect.test(text)) return { name: target.name, url: target.url, ok: true, status: response.status };
+      lastError = !response.ok
+        ? `HTTP ${response.status}`
+        : !validType
+          ? `неожиданный Content-Type: ${response.headers.get("content-type") ?? "не указан"}`
+          : "страница не содержит ожидаемую оболочку приложения";
     } catch (error) {
       lastError = error instanceof Error ? error.message : String(error);
     }

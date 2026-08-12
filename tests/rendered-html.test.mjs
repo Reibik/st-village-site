@@ -577,6 +577,9 @@ test("production operations include durable storage, verified backups, protected
   const analyticsRoute = await readFile(new URL("../app/api/analytics/route.ts", import.meta.url), "utf8");
   const management = await readFile(new URL("../src/features/status/status-management.tsx", import.meta.url), "utf8");
   const uptimeWorkflow = await readFile(new URL("../.github/workflows/external-uptime.yml", import.meta.url), "utf8");
+  const uptimeCheck = await readFile(new URL("../scripts/external-uptime-check.mjs", import.meta.url), "utf8");
+  const countryFlag = await readFile(new URL("../src/components/country-flag.tsx", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
   const codeql = await readFile(new URL("../.github/workflows/codeql.yml", import.meta.url), "utf8");
   const dependabot = await readFile(new URL("../.github/dependabot.yml", import.meta.url), "utf8");
 
@@ -598,6 +601,10 @@ test("production operations include durable storage, verified backups, protected
   assert.match(management, /X-ST-Village-Status-Token/);
   assert.match(management, /Новая публикация/);
   assert.match(uptimeWorkflow, /cron: "\*\/5 \* \* \* \*"/);
+  assert.match(uptimeCheck, /id=\["'\]root/);
+  assert.match(uptimeCheck, /contentType: \/text\\\/html\/i/);
+  for (const code of ["CH", "DE", "FI", "FR", "NL", "PL", "SE", "TR"]) assert.match(countryFlag, new RegExp(`${code}:`));
+  for (const code of ["ch", "de", "fi", "fr", "nl", "pl", "se", "tr"]) assert.match(styles, new RegExp(`\\.flag-${code}\\b`));
   assert.match(codeql, /github\/codeql-action/);
   assert.match(dependabot, /package-ecosystem: npm/);
 });

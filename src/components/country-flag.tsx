@@ -2,9 +2,11 @@ const countryLabels: Record<string, string> = {
   CH: "Швейцария",
   DE: "Германия",
   FI: "Финляндия",
+  FR: "Франция",
   NL: "Нидерланды",
   PL: "Польша",
   SE: "Швеция",
+  TR: "Турция",
 };
 
 export function CountryFlag({ code }: { code: string }) {

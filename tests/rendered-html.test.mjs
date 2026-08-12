@@ -42,6 +42,19 @@ test("server-renders the ST VILLAGE public home page", async () => {
   assert.doesNotMatch(html, /\bVPN\b/i);
 });
 
+test("home infrastructure is presented as a live network", async () => {
+  const response = await worker.fetch(new Request("http://localhost/", { headers: { accept: "text/html" } }), env, context);
+  const html = await response.text();
+  const component = await readFile(new URL("../src/features/status/home-network-showcase.tsx", import.meta.url), "utf8");
+
+  assert.match(html, /class="network-showcase"/);
+  assert.match(html, /Европа рядом/);
+  assert.match(html, /ST VILLAGE NETWORK/);
+  assert.match(html, /href="\/status"/);
+  assert.match(component, /fetch\("\/api\/live-status"/);
+  assert.match(component, /setInterval\([^]*60_000/);
+});
+
 test("all public pages render their expected content", async () => {
   const pages = [
     ["/pricing", "Выберите удобный тариф"],

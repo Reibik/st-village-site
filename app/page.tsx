@@ -1,6 +1,5 @@
 import Image from "next/image";
 import { CtaPanel } from "@/src/components/cta-panel";
-import { CountryFlag } from "@/src/components/country-flag";
 import { FaqList } from "@/src/components/faq-list";
 import { SectionHeading } from "@/src/components/section-heading";
 import { PlatformStrip } from "@/src/components/platform-strip";
@@ -8,7 +7,8 @@ import { TrialOffer } from "@/src/components/trial-offer";
 import { TrustPanel } from "@/src/components/trust-panel";
 import { TelegramNewsFeed } from "@/src/features/news/telegram-news-feed";
 import { PricingCatalog } from "@/src/features/pricing/pricing-catalog";
-import { homeFaqs, locations } from "@/src/config/content";
+import { HomeNetworkShowcase } from "@/src/features/status/home-network-showcase";
+import { homeFaqs } from "@/src/config/content";
 import { CABINET_URL, TELEGRAM_BOT_URL } from "@/src/config/links";
 import { createFaqJsonLd, serializeJsonLd } from "@/src/config/structured-data";
 
@@ -129,17 +129,7 @@ export default function Home() {
         <PricingCatalog compact />
       </section>
 
-      <section className="section-shell section-block" id="locations">
-        <SectionHeading eyebrow="Инфраструктура" title="Серверные локации" text="Состояние серверов поступает из Remnawave и доступно на отдельной странице мониторинга." action={{ label: "Страница состояния", href: "/status" }} />
-        <div className="location-list">
-          {locations.map((location) => (
-            <div className="location-row" key={location.code}>
-              <div className="location-name"><CountryFlag code={location.code} /><div><strong>{location.name}</strong><small>{location.region}</small></div></div>
-              <div className="location-status"><span className="status-pill status-unknown"><span className="status-dot" />Состояние в мониторинге</span></div>
-            </div>
-          ))}
-        </div>
-      </section>
+      <HomeNetworkShowcase />
 
       <section className="section-shell section-block" id="getting-started">
         <SectionHeading eyebrow="Начало работы" title="Три понятных шага" text="Бот и кабинет уже связаны между собой, а сайт помогает быстро выбрать нужный маршрут." />

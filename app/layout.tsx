@@ -3,6 +3,7 @@ import { SiteFooter } from "@/src/components/site-footer";
 import { SiteHeader } from "@/src/components/site-header";
 import { SiteObservability } from "@/src/components/site-observability";
 import { UpdateNotice } from "@/src/components/update-notice";
+import { SiteAnnouncements } from "@/src/components/site-announcements";
 import { createPageMetadata, DEFAULT_DESCRIPTION, DEFAULT_TITLE, rootJsonLd, SITE_NAME, SITE_URL } from "@/src/config/seo";
 import "./globals.css";
 
@@ -57,6 +58,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <a className="skip-link" href="#main-content">Перейти к содержанию</a>
         <div className="site-noise" aria-hidden="true" />
         <SiteHeader />
+        <SiteAnnouncements />
         <main id="main-content">{children}</main>
         <SiteFooter />
         <UpdateNotice />

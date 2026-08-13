@@ -4,6 +4,8 @@ import test from "node:test";
 
 process.env.STATUS_PROBE_TIMEOUT_MS = "500";
 process.env.STATUS_REGIONAL_CHECKS_DISABLED = "1";
+process.env.SITE_BOT_API_TOKEN = "test-site-bot-token-with-at-least-32-bytes";
+process.env.SITE_BOT_ADMIN_IDS = "274813568";
 
 const workerUrl = new URL("../dist/server/index.js", import.meta.url);
 workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
@@ -13,6 +15,20 @@ const env = {
   ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) },
 };
 const context = { waitUntil() {}, passThroughOnException() {} };
+
+async function signedBotRequest(path, options = {}) {
+  const method = options.method ?? "GET";
+  const body = options.body ?? "";
+  const timestamp = String(Math.floor(Date.now() / 1000));
+  const nonce = crypto.randomUUID();
+  const canonical = [timestamp, nonce, method, path, body].join("\n");
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(process.env.SITE_BOT_API_TOKEN), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const signature = Array.from(new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(canonical))), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return new Request(`http://localhost${path}`, { ...options, method, body: body || undefined, headers: {
+    "content-type": "application/json", "x-st-village-bot-actor": "274813568",
+    "x-st-village-bot-timestamp": timestamp, "x-st-village-bot-nonce": nonce, "x-st-village-bot-signature": signature,
+  } });
+}
 
 test("server-renders the ST VILLAGE public home page", async () => {
   const response = await worker.fetch(new Request("http://localhost/", { headers: { accept: "text/html" } }), env, context);
@@ -130,6 +146,37 @@ test("version endpoint detects a newer deployment without being cached", async (
   const stale = await worker.fetch(new Request("http://localhost/api/version?current=previous-build"), env, context);
   assert.equal(stale.status, 200);
   assert.equal((await stale.json()).updateAvailable, true);
+});
+
+test("website bot API requires signed admin requests and publishes announcements", async () => {
+  const unauthorized = await worker.fetch(new Request("http://localhost/api/bot-admin/announcements"), env, context);
+  assert.equal(unauthorized.status, 401);
+  const oneTimeRequest = await signedBotRequest("/api/bot-admin/announcements");
+  assert.equal((await worker.fetch(oneTimeRequest.clone(), env, context)).status, 200);
+  assert.equal((await worker.fetch(oneTimeRequest.clone(), env, context)).status, 401);
+
+  const payload = {
+    kind: "update", title: "Новая функция сайта", message: "Проверяем красивое объявление из Telegram-бота.",
+    placement: "all", state: "published", dismissible: true, startsAt: new Date(Date.now() - 1000).toISOString(),
+  };
+  const body = JSON.stringify(payload);
+  const create = await worker.fetch(await signedBotRequest("/api/bot-admin/announcements", { method: "POST", body }), env, context);
+  assert.equal([200, 503].includes(create.status), true);
+  const created = await create.json();
+  assert.equal(created.announcement.title, payload.title);
+  assert.equal(created.announcement.state, "published");
+
+  const publicResponse = await worker.fetch(new Request("http://localhost/api/announcements"), env, context);
+  assert.equal(publicResponse.status, 200);
+  const publicPayload = await publicResponse.json();
+  assert.equal(publicPayload.announcements.some((item) => item.title === payload.title), true);
+
+  const integration = await readFile(new URL("../integrations/bedolaga-site-admin/app/handlers/admin/site_management.py", import.meta.url), "utf8");
+  const client = await readFile(new URL("../integrations/bedolaga-site-admin/app/services/site_admin_api.py", import.meta.url), "utf8");
+  assert.match(integration, /site_admin_announcement_publish/);
+  assert.match(integration, /site_admin_incident_resolve/);
+  assert.match(client, /X-ST-Village-Bot-Signature/);
+  assert.doesNotMatch(client, /verify=False/);
 });
 
 test("status endpoint returns a sanitized live snapshot", async () => {

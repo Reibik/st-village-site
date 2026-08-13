@@ -47,12 +47,38 @@ export type ManagedReview = PublicReview & {
   status: "pending" | "approved" | "rejected";
   moderatedAt?: string;
 };
+export type SiteAnnouncement = {
+  id: string;
+  kind: "info" | "update" | "maintenance" | "critical" | "promo";
+  title: string;
+  message: string;
+  ctaLabel: string | null;
+  ctaUrl: string | null;
+  placement: "all" | "home" | "status";
+  state: "draft" | "published" | "archived";
+  dismissible: boolean;
+  startsAt: string;
+  endsAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+export type SiteAdminAuditEntry = {
+  id: string;
+  actorId: string;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  details: Record<string, unknown>;
+  createdAt: string;
+};
 
 let databasePromise: Promise<D1DatabaseLike | null> | null = null;
 let schemaReady: Promise<void> | null = null;
 const memorySamples: HistoryPoint[] = [];
 const memoryReviews: PublicReview[] = [];
 const memoryAlerts = new Map<string, string>();
+const memoryAnnouncements: SiteAnnouncement[] = [];
+const memoryAudit: SiteAdminAuditEntry[] = [];
 
 type StoredReview = PublicReview & { status: "pending" | "approved" | "rejected"; moderatedAt?: string };
 type FileState = {
@@ -61,6 +87,8 @@ type FileState = {
   reviews: StoredReview[];
   alerts: Record<string, string>;
   metrics: Record<string, number>;
+  announcements: SiteAnnouncement[];
+  audit: SiteAdminAuditEntry[];
 };
 type FileStore = { path: string; state: FileState };
 
@@ -68,7 +96,7 @@ let fileStorePromise: Promise<FileStore | null> | null = null;
 let fileWriteQueue: Promise<boolean> = Promise.resolve(true);
 
 function emptyFileState(): FileState {
-  return { samples: [], incidents: [], reviews: [], alerts: {}, metrics: {} };
+  return { samples: [], incidents: [], reviews: [], alerts: {}, metrics: {}, announcements: [], audit: [] };
 }
 
 function defaultFileStorePath(channel: string) {
@@ -411,6 +439,103 @@ export async function setAlertState(key: string, value: string) {
   return true;
 }
 
+function announcementFromRow(row: Record<string, unknown>): SiteAnnouncement {
+  return {
+    id: String(row.id),
+    kind: row.kind as SiteAnnouncement["kind"],
+    title: String(row.title),
+    message: String(row.message),
+    ctaLabel: row.cta_label ? String(row.cta_label) : null,
+    ctaUrl: row.cta_url ? String(row.cta_url) : null,
+    placement: row.placement as SiteAnnouncement["placement"],
+    state: row.state as SiteAnnouncement["state"],
+    dismissible: Boolean(row.dismissible),
+    startsAt: String(row.starts_at),
+    endsAt: row.ends_at ? String(row.ends_at) : null,
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+  };
+}
+
+export async function getSiteAnnouncements() {
+  const database = await getDatabase();
+  if (!database) {
+    const store = await getFileStore();
+    return [...(store?.state.announcements ?? memoryAnnouncements)]
+      .sort((left, right) => right.startsAt.localeCompare(left.startsAt))
+      .slice(0, 100);
+  }
+  const rows = (await database.prepare(`SELECT id, kind, title, message, cta_label, cta_url, placement,
+    state, dismissible, starts_at, ends_at, created_at, updated_at FROM site_announcements
+    ORDER BY starts_at DESC LIMIT 100`).all<Record<string, unknown>>()).results ?? [];
+  return rows.map(announcementFromRow);
+}
+
+export async function getActiveSiteAnnouncements(at = new Date()) {
+  const iso = at.toISOString();
+  return (await getSiteAnnouncements()).filter((item) => item.state === "published"
+    && item.startsAt <= iso && (!item.endsAt || item.endsAt > iso)).slice(0, 5);
+}
+
+export async function saveSiteAnnouncement(announcement: SiteAnnouncement) {
+  const database = await getDatabase();
+  if (!database) {
+    const store = await getFileStore();
+    if (!store) {
+      memoryAnnouncements.unshift(announcement);
+      return false;
+    }
+    store.state.announcements = [announcement, ...(store.state.announcements ?? []).filter((item) => item.id !== announcement.id)].slice(0, 100);
+    return persistFileStore(store);
+  }
+  await database.prepare(`INSERT INTO site_announcements
+    (id, kind, title, message, cta_label, cta_url, placement, state, dismissible, starts_at, ends_at, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(id) DO UPDATE SET kind = excluded.kind, title = excluded.title, message = excluded.message,
+    cta_label = excluded.cta_label, cta_url = excluded.cta_url, placement = excluded.placement,
+    state = excluded.state, dismissible = excluded.dismissible, starts_at = excluded.starts_at,
+    ends_at = excluded.ends_at, updated_at = excluded.updated_at`).bind(
+      announcement.id, announcement.kind, announcement.title, announcement.message,
+      announcement.ctaLabel, announcement.ctaUrl, announcement.placement, announcement.state,
+      announcement.dismissible ? 1 : 0, announcement.startsAt, announcement.endsAt,
+      announcement.createdAt, announcement.updatedAt,
+    ).run();
+  return true;
+}
+
+export async function recordSiteAdminAudit(entry: Omit<SiteAdminAuditEntry, "id" | "createdAt">) {
+  const createdAt = new Date().toISOString();
+  const database = await getDatabase();
+  if (!database) {
+    const stored = { ...entry, id: crypto.randomUUID(), createdAt };
+    const store = await getFileStore();
+    if (!store) {
+      memoryAudit.unshift(stored);
+      if (memoryAudit.length > 200) memoryAudit.length = 200;
+      return false;
+    }
+    store.state.audit = [stored, ...(store.state.audit ?? [])].slice(0, 500);
+    return persistFileStore(store);
+  }
+  await database.prepare(`INSERT INTO site_admin_audit
+    (actor_id, action, entity_type, entity_id, details, created_at) VALUES (?, ?, ?, ?, ?, ?)`)
+    .bind(entry.actorId, entry.action, entry.entityType, entry.entityId, JSON.stringify(entry.details), createdAt).run();
+  return true;
+}
+
+export async function getSiteAdminAudit(limit = 20): Promise<SiteAdminAuditEntry[]> {
+  const safeLimit = Math.min(100, Math.max(1, Math.floor(limit)));
+  const database = await getDatabase();
+  if (!database) return [...((await getFileStore())?.state.audit ?? memoryAudit)].slice(0, safeLimit);
+  const rows = (await database.prepare(`SELECT id, actor_id, action, entity_type, entity_id, details, created_at
+    FROM site_admin_audit ORDER BY created_at DESC LIMIT ?`).bind(safeLimit).all<Record<string, unknown>>()).results ?? [];
+  return rows.map((row) => ({
+    id: String(row.id), actorId: String(row.actor_id), action: String(row.action),
+    entityType: String(row.entity_type), entityId: row.entity_id ? String(row.entity_id) : null,
+    details: JSON.parse(String(row.details || "{}")) as Record<string, unknown>, createdAt: String(row.created_at),
+  }));
+}
+
 export async function cleanupObservability() {
   const database = await getDatabase();
   if (!database) {
@@ -422,12 +547,14 @@ export async function cleanupObservability() {
     store.state.reviews = store.state.reviews.filter((item) => item.status !== "rejected" || item.createdAt >= reviewCutoff);
     const metricCutoff = new Date(Date.now() - 90 * 86_400_000).toISOString().slice(0, 10);
     store.state.metrics = Object.fromEntries(Object.entries(store.state.metrics).filter(([key]) => key.slice(0, 10) >= metricCutoff));
+    store.state.audit = (store.state.audit ?? []).filter((item) => item.createdAt >= new Date(Date.now() - 180 * 86_400_000).toISOString());
     return persistFileStore(store);
   }
   await database.batch([
     database.prepare("DELETE FROM status_samples WHERE checked_at < datetime('now', '-45 days')"),
     database.prepare("DELETE FROM private_metrics WHERE created_at < datetime('now', '-90 days')"),
     database.prepare("DELETE FROM reviews WHERE status = 'rejected' AND created_at < datetime('now', '-30 days')"),
+    database.prepare("DELETE FROM site_admin_audit WHERE created_at < datetime('now', '-180 days')"),
   ]);
   return true;
 }

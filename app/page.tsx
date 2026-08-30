@@ -111,7 +111,7 @@ export default function Home() {
           <span className="cabinet-preview-frame">
             <span className="cabinet-preview-toolbar" aria-hidden="true">
               <span className="cabinet-preview-dots"><i /><i /><i /></span>
-              <span>cabinet.stvillage.ru</span>
+              <span>cabinet.stvillage.top</span>
               <strong>ST</strong>
             </span>
             <picture className="cabinet-preview-picture">

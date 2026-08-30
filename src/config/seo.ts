@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://stvillage.ru").replace(/\/+$/, "");
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://stvillage.top").replace(/\/+$/, "");
 export const SITE_NAME = "ST VILLAGE";
 export const DEFAULT_TITLE = "ST VILLAGE — защищённое подключение без лишней сложности";
 export const DEFAULT_DESCRIPTION = "ST VILLAGE — удобный сервис защищённого подключения: тарифы, настройка через Happ и INCY, личный кабинет, поддержка и состояние серверов.";

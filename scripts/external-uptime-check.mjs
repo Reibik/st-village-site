@@ -1,9 +1,9 @@
 const targets = [
-  { name: "Сайт", url: "https://stvillage.ru/api/health", expect: /"status"\s*:\s*"ok"/ },
-  { name: "Страница статуса", url: "https://stvillage.ru/status", expect: /ST VILLAGE|Статус|Состояние/i },
+  { name: "Сайт", url: "https://stvillage.top/api/health", expect: /"status"\s*:\s*"ok"/ },
+  { name: "Страница статуса", url: "https://stvillage.top/status", expect: /ST VILLAGE|Статус|Состояние/i },
   {
     name: "Личный кабинет",
-    url: "https://cabinet.stvillage.ru",
+    url: "https://cabinet.stvillage.top",
     contentType: /text\/html/i,
     expect: /<div\s+id=["']root["']><\/div>|<script[^>]+type=["']module["'][^>]+src=["']\/assets\/index-/i,
   },

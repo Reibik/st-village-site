@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   const activeIncidents = incidents.filter((item) => item.status !== "resolved");
   return Response.json({
     generatedAt: new Date().toISOString(),
-    site: { status: live ? "operational" : "degraded", url: process.env.NEXT_PUBLIC_SITE_URL || "https://stvillage.ru" },
+    site: { status: live ? "operational" : "degraded", url: process.env.NEXT_PUBLIC_SITE_URL || "https://stvillage.top" },
     release: { version: SITE_RELEASE.version, channel: SITE_RELEASE.channel, name: SITE_RELEASE.name, build: __ST_VILLAGE_BUILD_VERSION__ },
     infrastructure: live ? { status: live.status, ...live.totals } : null,
     incidents: { active: activeIncidents.length, scheduled: activeIncidents.filter((item) => item.status === "scheduled").length },

@@ -37,4 +37,4 @@ SITE_ADMIN_BASIC_AUTH_PASSWORD=<пароль защищённого dev-стен
 ```
 
 На production достаточно поменять `SITE_ADMIN_BASE_URL` на
-`https://stvillage.ru`; код и подпись запросов остаются теми же.
+`https://stvillage.top`; код и подпись запросов остаются теми же.

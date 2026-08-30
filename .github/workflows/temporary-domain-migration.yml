@@ -18,7 +18,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           install -d -m 700 "$HOME/.ssh"
-          printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/id_ed25519"
+          printf '%s\n' "$SSH_PRIVATE_KEY" | tr -d '\r' > "$HOME/.ssh/id_ed25519"
           chmod 600 "$HOME/.ssh/id_ed25519"
           cat > "$HOME/.ssh/known_hosts" <<'EOF'
           [195.19.93.148]:22222 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINZ3MjcTIiOCm576ydKLMa5TeSeukfsw7BuKybpR9G0g

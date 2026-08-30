@@ -26,14 +26,10 @@ jobs:
           chmod 600 "$HOME/.ssh/known_hosts"
 
       - name: Apply domain migration
+        env:
+          SUDO_PASSWORD: ${{ secrets.ST_VILLAGE_VPS_TEMP_SUDO_PASSWORD }}
         run: |
-          ssh \
-            -i "$HOME/.ssh/id_ed25519" \
-            -p 22222 \
-            -o BatchMode=yes \
-            -o IdentitiesOnly=yes \
-            -o StrictHostKeyChecking=yes \
-            stvadmin@195.19.93.148 'sudo -n bash -s' <<'REMOTE_SCRIPT'
+          cat > "$RUNNER_TEMP/domain-migration.sh" <<'REMOTE_SCRIPT'
           set -Eeuo pipefail
 
           timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -97,3 +93,14 @@ jobs:
           trap - ERR
           echo "ST VILLAGE domain migration completed"
           REMOTE_SCRIPT
+
+          {
+            printf '%s\n' "$SUDO_PASSWORD"
+            cat "$RUNNER_TEMP/domain-migration.sh"
+          } | ssh \
+            -i "$HOME/.ssh/id_ed25519" \
+            -p 22222 \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            stvadmin@195.19.93.148 "sudo -S -p '' bash -s"

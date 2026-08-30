@@ -47,7 +47,7 @@ const worker = {
     if (url.pathname === "/.well-known/security.txt") {
       return withReleaseHeaders(new Response(
         "Contact: mailto:admin@stvillage.ru\n" +
-          "Canonical: https://stvillage.ru/.well-known/security.txt\n" +
+          "Canonical: https://stvillage.top/.well-known/security.txt\n" +
           "Preferred-Languages: ru, en\n" +
           "Expires: 2027-07-31T00:00:00.000Z\n",
         {

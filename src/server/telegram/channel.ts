@@ -130,7 +130,7 @@ async function fetchPosts(): Promise<TelegramPost[]> {
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
     const response = await fetch(TELEGRAM_PUBLIC_FEED_URL, {
-      headers: { Accept: "text/html,application/xhtml+xml", "User-Agent": "ST-VILLAGE-News/1.1 (+https://stvillage.ru/news)" },
+      headers: { Accept: "text/html,application/xhtml+xml", "User-Agent": "ST-VILLAGE-News/1.1 (+https://stvillage.top/news)" },
       redirect: "follow",
       signal: controller.signal,
     });

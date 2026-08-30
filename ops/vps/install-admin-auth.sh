@@ -18,7 +18,7 @@ admin_hash="$(printf '%s\n' "$admin_password" | caddy hash-password --algorithm 
 umask 077
 printf "ST_VILLAGE_ADMIN_AUTH_USER='%s'\nST_VILLAGE_ADMIN_AUTH_HASH='%s'\n" \
   "$admin_user" "$admin_hash" > "${stage}/admin.env"
-printf 'URL=https://stvillage.ru/reviews/moderation\nUSER=%s\nPASSWORD=%s\n' \
+printf 'URL=https://stvillage.top/reviews/moderation\nUSER=%s\nPASSWORD=%s\n' \
   "$admin_user" "$admin_password" > "${stage}/credentials"
 
 install -o root -g root -m 600 "${stage}/admin.env" /etc/caddy/st-village-admin.env

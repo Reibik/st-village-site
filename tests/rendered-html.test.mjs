@@ -26,7 +26,7 @@ test("server-renders the ST VILLAGE public home page", async () => {
   assert.match(html, /ST VILLAGE/);
   assert.match(html, /Стабильное подключение/);
   assert.match(html, /Открыть личный кабинет/);
-  assert.match(html, /https:\/\/cabinet\.stvillage\.ru/);
+  assert.match(html, /https:\/\/cabinet\.stvillage\.top/);
   assert.match(html, /https:\/\/t\.me\/st_village_vpn_bot/);
   assert.match(html, /class="footer-version"[^>]*>v(?:<!-- -->)?1\.2\.0<\/a>/);
   assert.match(html, /href="\/release"/);
@@ -99,7 +99,7 @@ test("system routes, redirect and not-found responses are valid", async () => {
   }
   const login = await worker.fetch(new Request("http://localhost/login", { redirect: "manual" }), env, context);
   assert.match(String(login.status), /^30[78]$/);
-  assert.equal(login.headers.get("location"), "https://cabinet.stvillage.ru/");
+  assert.equal(login.headers.get("location"), "https://cabinet.stvillage.top/");
 
   const missing = await worker.fetch(new Request("http://localhost/definitely-not-found", { headers: { accept: "text/html" } }), env, context);
   assert.equal(missing.status, 404);
@@ -248,7 +248,7 @@ test("pricing is synchronized through the public Bedolaga landing API", async ()
   assert.match(catalog, /deviceLimit/);
   assert.match(catalog, /priceKopeks/);
   assert.match(home, /<PricingCatalog compact/);
-  assert.match(exampleEnv, /BEDOLAGA_API_URL=https:\/\/cabinet\.stvillage\.ru\/api/);
+  assert.match(exampleEnv, /BEDOLAGA_API_URL=https:\/\/cabinet\.stvillage\.top\/api/);
   assert.doesNotMatch(`${route}${integration}${catalog}`, /X-API-Key|BOT_TOKEN|JWT|Authorization:/i);
 });
 
@@ -268,7 +268,7 @@ test("trial period is prominent and explains every limitation", async () => {
     assert.match(html, /flag-pl/, path);
     assert.match(html, /flag-se/, path);
     assert.match(html, /Белые списки не входят в пробный период/, path);
-    assert.match(html, /https:\/\/cabinet\.stvillage\.ru/, path);
+    assert.match(html, /https:\/\/cabinet\.stvillage\.top/, path);
   }
 });
 
@@ -323,11 +323,11 @@ test("priority dev improvements include private QR shortcuts and richer status d
 
 test("search engines and social platforms receive complete page metadata", async () => {
   const cases = [
-    ["/", "https://stvillage.ru/", "ST VILLAGE — защищённое подключение без лишней сложности"],
-    ["/pricing", "https://stvillage.ru/pricing", "Тарифы — ST VILLAGE"],
-    ["/connect", "https://stvillage.ru/connect", "Подключение — ST VILLAGE"],
-    ["/status", "https://stvillage.ru/status", "Статус инфраструктуры — ST VILLAGE"],
-    ["/news", "https://stvillage.ru/news", "Новости — ST VILLAGE"],
+    ["/", "https://stvillage.top/", "ST VILLAGE — защищённое подключение без лишней сложности"],
+    ["/pricing", "https://stvillage.top/pricing", "Тарифы — ST VILLAGE"],
+    ["/connect", "https://stvillage.top/connect", "Подключение — ST VILLAGE"],
+    ["/status", "https://stvillage.top/status", "Статус инфраструктуры — ST VILLAGE"],
+    ["/news", "https://stvillage.top/news", "Новости — ST VILLAGE"],
   ];
 
   for (const [path, canonical, socialTitle] of cases) {
@@ -336,7 +336,7 @@ test("search engines and social platforms receive complete page metadata", async
     const html = await response.text();
     assert.match(html, new RegExp(`<link rel="canonical" href="${canonical.replaceAll("/", "\\/")}"`), path);
     assert.match(html, new RegExp(`<meta property="og:title" content="${socialTitle}`), path);
-    assert.match(html, /<meta property="og:image" content="https:\/\/stvillage\.ru\/og-social-v2\.png"/);
+    assert.match(html, /<meta property="og:image" content="https:\/\/stvillage\.top\/og-social-v2\.png"/);
     assert.match(html, /<meta property="og:image:width" content="1200"/);
     assert.match(html, /<meta property="og:image:height" content="630"/);
     assert.match(html, /<meta name="twitter:card" content="summary_large_image"/);
@@ -349,17 +349,17 @@ test("search engines and social platforms receive complete page metadata", async
   assert.match(homeHtml, /https:\/\/schema\.org/);
   assert.match(homeHtml, /"@type":"WebSite"/);
   assert.match(homeHtml, /"@type":"Organization"/);
-  assert.match(homeHtml, /rel="shortcut icon" href="https:\/\/stvillage\.ru\/favicon\.ico\?v=2"/);
-  assert.match(homeHtml, /rel="icon" href="https:\/\/stvillage\.ru\/favicon\.ico\?v=2" sizes="any" type="image\/x-icon"/);
+  assert.match(homeHtml, /rel="shortcut icon" href="https:\/\/stvillage\.top\/favicon\.ico\?v=2"/);
+  assert.match(homeHtml, /rel="icon" href="https:\/\/stvillage\.top\/favicon\.ico\?v=2" sizes="any" type="image\/x-icon"/);
   assert.match(homeHtml, /apple-touch-icon\.png\?v=2/);
   assert.doesNotMatch(homeHtml, /favicon\.svg/);
 
   const sitemap = await worker.fetch(new Request("http://localhost/sitemap.xml"), env, context);
   const sitemapXml = await sitemap.text();
-  assert.match(sitemapXml, /https:\/\/stvillage\.ru\/legal\/privacy/);
-  assert.match(sitemapXml, /https:\/\/stvillage\.ru\/legal\/terms/);
-  assert.match(sitemapXml, /https:\/\/stvillage\.ru\/release/);
-  assert.match(sitemapXml, /https:\/\/stvillage\.ru\/reviews/);
+  assert.match(sitemapXml, /https:\/\/stvillage\.top\/legal\/privacy/);
+  assert.match(sitemapXml, /https:\/\/stvillage\.top\/legal\/terms/);
+  assert.match(sitemapXml, /https:\/\/stvillage\.top\/release/);
+  assert.match(sitemapXml, /https:\/\/stvillage\.top\/reviews/);
 
   const manifest = await worker.fetch(new Request("http://localhost/manifest.webmanifest"), env, context);
   const manifestJson = await manifest.json();
@@ -453,7 +453,7 @@ test("observability, incidents, regional checks and private analytics are wired"
   assert.match(alerts, /previous === fingerprint/);
   assert.match(regional, /api\.globalping\.io\/v1\/measurements/);
   assert.match(regional, /STATUS_PUBLIC_SITE_URL/);
-  assert.match(regional, /https:\/\/stvillage\.ru/);
+  assert.match(regional, /https:\/\/stvillage\.top/);
   assert.match(migration, /CREATE TABLE IF NOT EXISTS incidents/);
   assert.match(migration, /CREATE INDEX IF NOT EXISTS idx_status_samples_checked_at/);
   assert.match(migration, /PRAGMA optimize/);
@@ -554,7 +554,7 @@ test("v1.2.0 operational release safeguards are present", async () => {
   assert.match(globalError, /Сайт временно недоступен/);
   assert.doesNotMatch(globalError, /error\.(?:message|stack)|\{error\./);
   assert.match(security, /Contact: mailto:admin@stvillage\.ru/);
-  assert.match(security, /Canonical: https:\/\/stvillage\.ru\/\.well-known\/security\.txt/);
+  assert.match(security, /Canonical: https:\/\/stvillage\.top\/\.well-known\/security\.txt/);
   assert.match(releaseConfig, /channel: "stable"/);
   assert.match(releaseConfig, /name: "Мониторинг и качество"/);
   assert.match(releasePage, /Живой мониторинг и надёжная эксплуатация/);
@@ -591,6 +591,10 @@ test("production operations include durable storage, verified backups, protected
   assert.match(backup, /RESTIC_REPOSITORY/);
   assert.match(backupTimer, /OnCalendar=\*-\*-\* 02:25:00/);
   assert.match(caddy, /ST_VILLAGE_ADMIN_AUTH_HASH/);
+  assert.match(caddy, /stvillage\.top \{/);
+  assert.match(caddy, /stvillage\.ru, www\.stvillage\.ru/);
+  assert.match(caddy, /redir https:\/\/stvillage\.top\{uri\} permanent/);
+  assert.match(caddy, /https:\/\/cabinet\.stvillage\.top/);
   assert.match(caddy, /@status_analytics/);
   assert.match(adminInstaller, /caddy hash-password --algorithm bcrypt/);
   assert.match(rateLimit, /RATE_LIMIT_SECRET/);

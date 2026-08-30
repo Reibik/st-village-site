@@ -19,7 +19,7 @@ export function SiteObservability() {
       if (!(anchor instanceof HTMLAnchorElement)) return;
       try {
         const url = new URL(anchor.href, window.location.href);
-        const destination = url.hostname === "cabinet.stvillage.ru"
+        const destination = url.hostname === "cabinet.stvillage.top"
           ? "cabinet"
           : url.hostname === "t.me" && url.pathname.includes("st_village_vpn_bot") ? "telegram" : null;
         if (destination) send({ eventType: "outbound_click", destination });

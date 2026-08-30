@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-base_url="${1:-https://stvillage.ru}"
+base_url="${1:-https://stvillage.top}"
 expected_release="${2:-1.2.0}"
 
 check_url() {
@@ -18,7 +18,7 @@ grep -Fq "\"release\":\"${expected_release}\"" <<<"$version_payload"
 grep -Fq '"channel":"stable"' <<<"$version_payload"
 
 home_html="$(curl --fail --silent --show-error --max-time 15 "${base_url}/")"
-grep -Fq 'https://stvillage.ru/og-social-v2.png' <<<"$home_html"
+grep -Fq 'https://stvillage.top/og-social-v2.png' <<<"$home_html"
 grep -Fq 'application/ld+json' <<<"$home_html"
 
 headers="$(curl --fail --silent --show-error --head --max-time 15 "${base_url}/")"

@@ -75,7 +75,7 @@ function defaultFileStorePath(channel: string) {
   if (process.env.NEXT_PUBLIC_SITE_URL?.includes("dev.stvillage.ru")) {
     return "/opt/st-village-dev/data/observability.json";
   }
-  if (process.env.NEXT_PUBLIC_SITE_URL?.includes("stvillage.ru")) {
+  if (process.env.NEXT_PUBLIC_SITE_URL?.includes("stvillage.top") || process.env.NEXT_PUBLIC_SITE_URL?.includes("stvillage.ru")) {
     return "/opt/st-village-site/data/observability.json";
   }
   return `/var/tmp/st-village-observability-${channel}.json`;

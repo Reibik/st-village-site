@@ -1,0 +1,99 @@
+name: Temporary stvillage.top migration
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Configure temporary SSH access
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.ST_VILLAGE_VPS_TEMP_KEY }}
+        run: |
+          set -Eeuo pipefail
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$HOME/.ssh/id_ed25519"
+          chmod 600 "$HOME/.ssh/id_ed25519"
+          cat > "$HOME/.ssh/known_hosts" <<'EOF'
+          [195.19.93.148]:22222 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINZ3MjcTIiOCm576ydKLMa5TeSeukfsw7BuKybpR9G0g
+          EOF
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Apply domain migration
+        run: |
+          ssh \
+            -i "$HOME/.ssh/id_ed25519" \
+            -p 22222 \
+            -o BatchMode=yes \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            stvadmin@195.19.93.148 'sudo -n bash -s' <<'REMOTE_SCRIPT'
+          set -Eeuo pipefail
+
+          timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+          env_file=/etc/st-village/site.env
+          caddy_file=/etc/caddy/Caddyfile
+          env_backup="${env_file}.pre-stvillage-top-${timestamp}"
+          caddy_backup="${caddy_file}.pre-stvillage-top-${timestamp}"
+
+          test -f "$env_file"
+          test -f "$caddy_file"
+          cp -a "$env_file" "$env_backup"
+          cp -a "$caddy_file" "$caddy_backup"
+
+          rollback() {
+            exit_code=$?
+            echo "Migration failed; restoring server configuration"
+            cp -a "$env_backup" "$env_file" || true
+            cp -a "$caddy_backup" "$caddy_file" || true
+            systemctl start st-village-site.service || true
+            systemctl reload caddy || true
+            systemctl enable --now st-village-deploy.timer || true
+            exit "$exit_code"
+          }
+          trap rollback ERR
+
+          tmp_env="$(mktemp)"
+          {
+            grep -Ev '^(NEXT_PUBLIC_SITE_URL|BEDOLAGA_API_URL|STATUS_CABINET_URL|STATUS_PUBLIC_SITE_URL)=' "$env_file" || true
+            printf '%s\n' \
+              'NEXT_PUBLIC_SITE_URL=https://stvillage.top' \
+              'BEDOLAGA_API_URL=https://cabinet.stvillage.top/api' \
+              'STATUS_CABINET_URL=https://cabinet.stvillage.top' \
+              'STATUS_PUBLIC_SITE_URL=https://stvillage.top'
+          } > "$tmp_env"
+
+          env_owner="$(stat -c %U "$env_file")"
+          env_group="$(stat -c %G "$env_file")"
+          env_mode="$(stat -c %a "$env_file")"
+          install -o "$env_owner" -g "$env_group" -m "$env_mode" "$tmp_env" "$env_file"
+          rm -f "$tmp_env"
+
+          systemctl stop st-village-deploy.timer || true
+          systemctl stop st-village-deploy.service || true
+          systemctl stop st-village-site.service
+          /usr/local/sbin/st-village-deploy
+
+          new_caddy=/opt/st-village-site/current/ops/vps/Caddyfile
+          test -f "$new_caddy"
+          install -o root -g root -m 644 "$new_caddy" "$caddy_file"
+
+          set -a
+          test ! -f /etc/caddy/st-village-admin.env || source /etc/caddy/st-village-admin.env
+          test ! -f /etc/caddy/st-village-dev.env || source /etc/caddy/st-village-dev.env
+          set +a
+
+          caddy validate --config "$caddy_file" --adapter caddyfile
+          systemctl reload caddy
+          systemctl enable --now st-village-deploy.timer
+          curl --fail --silent --show-error --max-time 10 http://127.0.0.1:3000/api/health
+
+          trap - ERR
+          echo "ST VILLAGE domain migration completed"
+          REMOTE_SCRIPT

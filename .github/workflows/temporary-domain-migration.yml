@@ -20,6 +20,10 @@ jobs:
           install -d -m 700 "$HOME/.ssh"
           printf '%s\n' "$SSH_PRIVATE_KEY" | tr -d '\r' > "$HOME/.ssh/id_ed25519"
           chmod 600 "$HOME/.ssh/id_ed25519"
+          if ! ssh-keygen -y -f "$HOME/.ssh/id_ed25519" > /dev/null 2>&1; then
+            echo "::error title=SSH setup failed::Temporary SSH private key is not readable by OpenSSH"
+            exit 1
+          fi
           cat > "$HOME/.ssh/known_hosts" <<'EOF'
           [195.19.93.148]:22222 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINZ3MjcTIiOCm576ydKLMa5TeSeukfsw7BuKybpR9G0g
           EOF
@@ -94,6 +98,7 @@ jobs:
           echo "ST VILLAGE domain migration completed"
           REMOTE_SCRIPT
 
+          set +e
           {
             printf '%s\n' "$SUDO_PASSWORD"
             cat "$RUNNER_TEMP/domain-migration.sh"
@@ -103,4 +108,13 @@ jobs:
             -o BatchMode=yes \
             -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes \
-            stvadmin@195.19.93.148 "sudo -S -p '' bash -s"
+            stvadmin@195.19.93.148 "sudo -S -p '' bash -s" \
+            2> "$RUNNER_TEMP/ssh-error.log"
+          ssh_status=${PIPESTATUS[1]}
+          set -e
+
+          if [ "$ssh_status" -ne 0 ]; then
+            ssh_error="$(tr '\n' ' ' < "$RUNNER_TEMP/ssh-error.log" | head -c 1000)"
+            echo "::error title=SSH migration failed::$ssh_error"
+            exit "$ssh_status"
+          fi

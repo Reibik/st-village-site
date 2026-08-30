@@ -129,7 +129,7 @@ dev.stvillage.ru {
     }
 }
 
-www.stvillage.top, stvillage.ru, www.stvillage.ru {
+stvillage.ru, www.stvillage.ru {
     redir https://stvillage.top{uri} permanent
 }
 

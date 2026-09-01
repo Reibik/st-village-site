@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { CABINET_URL } from "@/src/config/links";
 
 const navItems = [
-  ["Возможности", "/#features"], ["Тарифы", "/pricing"], ["Подключение", "/connect"], ["Статус", "/status"], ["Поддержка", "/support"],
+  ["Возможности", "/#features"], ["Тарифы", "/pricing"], ["Купоны", "/coupons"], ["Подключение", "/connect"], ["Статус", "/status"], ["Поддержка", "/support"],
 ] as const;
 
 export function SiteHeader() {

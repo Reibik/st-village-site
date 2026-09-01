@@ -7,10 +7,12 @@ import { TrialOffer } from "@/src/components/trial-offer";
 import { TrustPanel } from "@/src/components/trust-panel";
 import { TelegramNewsFeed } from "@/src/features/news/telegram-news-feed";
 import { PricingCatalog } from "@/src/features/pricing/pricing-catalog";
+import { CouponDrop } from "@/src/features/coupons/coupon-drop";
 import { HomeNetworkShowcase } from "@/src/features/status/home-network-showcase";
 import { homeFaqs } from "@/src/config/content";
 import { CABINET_URL, TELEGRAM_BOT_URL } from "@/src/config/links";
 import { createFaqJsonLd, serializeJsonLd } from "@/src/config/structured-data";
+import { getCouponDropSnapshot } from "@/src/server/coupons/schedule";
 
 const advantages = [
   {
@@ -39,6 +41,7 @@ const steps = [
 const faqJsonLd = createFaqJsonLd(homeFaqs);
 
 export default function Home() {
+  const couponSnapshot = getCouponDropSnapshot();
   return (
     <>
       <section className="hero section-shell" aria-labelledby="hero-title">
@@ -74,6 +77,10 @@ export default function Home() {
 
       <section className="section-shell trial-section" aria-label="Пробный период ST VILLAGE">
       <TrialOffer />
+      </section>
+
+      <section className="section-shell coupon-home-section" aria-label="Купонная раздача ST VILLAGE">
+        <CouponDrop initialSnapshot={couponSnapshot} compact />
       </section>
 
       <TrustPanel />

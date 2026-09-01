@@ -2,10 +2,11 @@ import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/src/config/seo";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const updated = new Date("2026-08-02T00:00:00.000Z");
+  const updated = new Date("2026-09-01T00:00:00.000Z");
   const routes = [
     { path: "", changeFrequency: "daily", priority: 1 },
     { path: "/pricing", changeFrequency: "daily", priority: .9 },
+    { path: "/coupons", changeFrequency: "daily", priority: .85 },
     { path: "/connect", changeFrequency: "weekly", priority: .85 },
     { path: "/status", changeFrequency: "hourly", priority: .8 },
     { path: "/news", changeFrequency: "daily", priority: .8 },

@@ -2,10 +2,15 @@ import { getTelegramNews } from "@/src/server/telegram/channel";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const requestedLimit = Number(url.searchParams.get("limit") ?? "8");
-  const limit = Number.isFinite(requestedLimit) ? requestedLimit : 8;
+  const requestedLimit = Number(url.searchParams.get("limit") ?? "12");
+  const limit = Number.isFinite(requestedLimit) ? requestedLimit : 12;
+  const beforeValue = url.searchParams.get("before");
+  if (beforeValue && !/^\d+$/.test(beforeValue)) {
+    return Response.json({ status: "invalid_request", message: "Некорректный указатель страницы." }, { status: 400, headers: { "Cache-Control": "no-store" } });
+  }
+  const before = beforeValue ? Number(beforeValue) : undefined;
   try {
-    const snapshot = await getTelegramNews(limit);
+    const snapshot = await getTelegramNews(limit, before);
     return Response.json(snapshot, {
       headers: {
         "Cache-Control": "public, s-maxage=90, stale-while-revalidate=600",

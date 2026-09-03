@@ -25,10 +25,13 @@ export interface TelegramNewsSnapshot {
   channelUrl: string;
   posts: TelegramPost[];
   updatedAt: string;
+  nextBefore: string | null;
+  hasMore: boolean;
 }
 
-let channelCache: ChannelCache | undefined;
-let pendingRequest: Promise<TelegramPost[]> | undefined;
+const channelCache = new Map<string, ChannelCache>();
+const pendingRequests = new Map<string, Promise<TelegramPost[]>>();
+const MAX_CACHED_PAGES = 20;
 
 function decodeHtmlAttribute(value: string) {
   return value.replaceAll("&amp;", "&").replaceAll("&#39;", "'").replaceAll("&quot;", '"');
@@ -125,11 +128,17 @@ export function extractTelegramPosts(html: string): TelegramPost[] {
     .sort((left, right) => Number(right.id) - Number(left.id));
 }
 
-async function fetchPosts(): Promise<TelegramPost[]> {
+function getPublicFeedUrl(before?: number) {
+  const url = new URL(TELEGRAM_PUBLIC_FEED_URL);
+  if (before) url.searchParams.set("before", String(before));
+  return url.toString();
+}
+
+async function fetchPosts(before?: number): Promise<TelegramPost[]> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    const response = await fetch(TELEGRAM_PUBLIC_FEED_URL, {
+    const response = await fetch(getPublicFeedUrl(before), {
       headers: { Accept: "text/html,application/xhtml+xml", "User-Agent": "ST-VILLAGE-News/1.1 (+https://stvillage.top/news)" },
       redirect: "follow",
       signal: controller.signal,
@@ -147,23 +156,33 @@ async function fetchPosts(): Promise<TelegramPost[]> {
   }
 }
 
-async function getCachedPosts(): Promise<TelegramPost[]> {
+async function getCachedPosts(before?: number): Promise<TelegramPost[]> {
   const now = Date.now();
-  if (channelCache && channelCache.expiresAt > now) return channelCache.posts;
-  if (pendingRequest) return pendingRequest;
-  pendingRequest = fetchPosts().then((posts) => {
-    channelCache = { posts, expiresAt: Date.now() + CACHE_TTL_MS };
+  const cacheKey = before ? String(before) : "latest";
+  const cached = channelCache.get(cacheKey);
+  if (cached && cached.expiresAt > now) return cached.posts;
+  const pending = pendingRequests.get(cacheKey);
+  if (pending) return pending;
+
+  const request = fetchPosts(before).then((posts) => {
+    channelCache.set(cacheKey, { posts, expiresAt: Date.now() + CACHE_TTL_MS });
+    if (channelCache.size > MAX_CACHED_PAGES) channelCache.delete(channelCache.keys().next().value ?? "");
     return posts;
-  }).finally(() => { pendingRequest = undefined; });
-  return pendingRequest;
+  }).finally(() => { pendingRequests.delete(cacheKey); });
+  pendingRequests.set(cacheKey, request);
+  return request;
 }
 
-export async function getTelegramNews(limit: number): Promise<TelegramNewsSnapshot> {
-  const safeLimit = Math.min(12, Math.max(1, Math.trunc(limit)));
+export async function getTelegramNews(limit: number, before?: number): Promise<TelegramNewsSnapshot> {
+  const safeLimit = Math.min(20, Math.max(1, Math.trunc(limit)));
+  const pagePosts = await getCachedPosts(before);
+  const posts = pagePosts.slice(0, safeLimit);
   return {
     channel: TELEGRAM_NEWS_CHANNEL,
     channelUrl: TELEGRAM_NEWS_URL,
-    posts: (await getCachedPosts()).slice(0, safeLimit),
+    posts,
     updatedAt: new Date().toISOString(),
+    nextBefore: posts.at(-1)?.id ?? null,
+    hasMore: pagePosts.length >= safeLimit,
   };
 }

@@ -223,10 +223,41 @@ test("Telegram news integration uses the public channel without exposing credent
   assert.match(channel, /decodeHtmlAttribute\(mediaUrl\)/);
   assert.match(route, /s-maxage=90/);
   assert.match(feed, /REFRESH_INTERVAL_MS/);
+  assert.match(route, /beforeValue/);
+  assert.match(channel, /searchParams\.set\("before"/);
+  assert.match(feed, /Показать ещё новости/);
+  assert.match(feed, /mergePosts/);
   assert.match(card, /dangerouslySetInnerHTML/);
   assert.match(caddy, /img-src[^\n]+https:\/\/\*\.telesco\.pe/);
   assert.doesNotMatch(caddy, /script-src[^;\n]+telegram\.org|frame-src/);
   assert.doesNotMatch(`${route}${channel}${feed}${card}`, /BOT_TOKEN|Authorization:|api\.telegram\.org/);
+});
+
+test("Telegram news API paginates older channel posts without exposing the whole archive", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input, init) => {
+    if (String(input) === "https://t.me/s/exitcloud_vpn?before=191") {
+      assert.equal(init?.headers?.Accept, "text/html,application/xhtml+xml");
+      return new Response(`
+        <div class="tgme_widget_message_wrap"><div data-post="exitcloud_vpn/188"><div class="tgme_widget_message_text">Старая новость</div><time datetime="2026-08-01T10:00:00+00:00"></time></div></div>
+        <div class="tgme_widget_message_wrap"><div data-post="exitcloud_vpn/189"><div class="tgme_widget_message_text">Следующая новость</div><time datetime="2026-08-02T10:00:00+00:00"></time></div></div>
+      `, { headers: { "content-type": "text/html" } });
+    }
+    return originalFetch(input, init);
+  };
+  try {
+    const response = await worker.fetch(new Request("http://localhost/api/news?limit=2&before=191"), env, context);
+    assert.equal(response.status, 200);
+    const payload = await response.json();
+    assert.deepEqual(payload.posts.map((post) => post.id), ["189", "188"]);
+    assert.equal(payload.nextBefore, "188");
+    assert.equal(payload.hasMore, true);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  const invalid = await worker.fetch(new Request("http://localhost/api/news?before=not-a-number"), env, context);
+  assert.equal(invalid.status, 400);
 });
 
 test("pricing is synchronized through the public Bedolaga landing API", async () => {

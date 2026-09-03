@@ -624,6 +624,8 @@ test("observability, incidents, regional checks and private analytics are wired"
   assert.match(storage, /node:fs\/promises/);
   assert.match(storage, /\/opt\/st-village-site\/data\/observability\.json/);
   assert.match(alerts, /STATUS_ALERT_TELEGRAM_BOT_TOKEN/);
+  assert.match(alerts, /STATUS_TELEGRAM_NOTIFICATIONS_DISABLED/);
+  assert.match(alerts, /token === newsToken/);
   assert.match(alerts, /previous === fingerprint/);
   assert.match(regional, /api\.globalping\.io\/v1\/measurements/);
   assert.match(regional, /STATUS_PUBLIC_SITE_URL/);

@@ -2,18 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { TELEGRAM_NEWS_URL } from "@/src/config/links";
+import type { TelegramPost } from "@/src/server/telegram/types";
 import { TelegramPostCard } from "./telegram-post-card";
-
-interface TelegramPost {
-  id: string;
-  url: string;
-  html: string;
-  images: Array<{ url: string; alt: string }>;
-  publishedAt: string | null;
-  views: string | null;
-  buttons: Array<{ label: string; url: string }>;
-  unsupported: boolean;
-}
 interface TelegramNewsPayload { channel: string; posts: TelegramPost[]; nextBefore: string | null; hasMore: boolean }
 interface TelegramNewsFeedProps { limit?: number; compact?: boolean }
 

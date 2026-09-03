@@ -1,27 +1,31 @@
 "use client";
 
 import { createNewsArticleJsonLd, serializeJsonLd } from "@/src/config/structured-data";
+import type { TelegramNewsAttachment, TelegramPost } from "@/src/server/telegram/types";
 
 /* Telegram media has dynamic signed URLs and dimensions, so it is intentionally
    served directly from Telegram's allowlisted image CDN without the optimizer. */
 /* eslint-disable @next/next/no-img-element */
-
-interface TelegramPost {
-  id: string;
-  url: string;
-  html: string;
-  images: Array<{ url: string; alt: string }>;
-  publishedAt: string | null;
-  views: string | null;
-  buttons: Array<{ label: string; url: string }>;
-  unsupported: boolean;
-}
 
 function formatDate(value: string | null) {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
   return new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Moscow" }).format(date);
+}
+
+function TelegramAttachment({ attachment }: { attachment: TelegramNewsAttachment }) {
+  if (["video", "animation", "video_note"].includes(attachment.type)) {
+    return <video className={attachment.hasSpoiler ? "telegram-media-spoiler" : ""} src={attachment.url} controls playsInline preload="metadata" />;
+  }
+  if (["audio", "voice"].includes(attachment.type)) {
+    return <div className="telegram-audio"><span aria-hidden="true">♫</span><div><strong>{attachment.type === "voice" ? "Голосовое сообщение" : attachment.fileName || "Аудиозапись"}</strong><audio src={attachment.url} controls preload="metadata" /></div></div>;
+  }
+  if (attachment.type === "document" || (attachment.type === "sticker" && attachment.mimeType === "application/x-tgsticker")) {
+    const label = attachment.type === "sticker" ? "Анимированный стикер" : attachment.fileName || "Документ";
+    return <a className="telegram-document" href={`${attachment.url}&download=1`}><span aria-hidden="true">↓</span><span><strong>{label}</strong><small>{attachment.mimeType || "Файл из Telegram"}</small></span></a>;
+  }
+  return null;
 }
 
 export function TelegramPostCard({ post }: { post: TelegramPost }) {
@@ -40,6 +44,20 @@ export function TelegramPostCard({ post }: { post: TelegramPost }) {
           {post.images.map((image) => <a href={post.url} target="_blank" rel="noreferrer" key={image.url}><img src={image.url} alt={image.alt} loading="lazy" /></a>)}
         </div>
       )}
+      {post.attachments.filter((attachment) => attachment.type !== "photo" && !(attachment.type === "sticker" && attachment.mimeType !== "application/x-tgsticker")).length > 0 && (
+        <div className="telegram-attachments">
+          {post.attachments.filter((attachment) => attachment.type !== "photo" && !(attachment.type === "sticker" && attachment.mimeType !== "application/x-tgsticker"))
+            .map((attachment) => <TelegramAttachment attachment={attachment} key={attachment.id} />)}
+        </div>
+      )}
+      {post.poll && <section className="telegram-poll" aria-label="Опрос Telegram">
+        <strong>{post.poll.question}</strong>
+        <div>{post.poll.options.map((option) => {
+          const percent = post.poll && post.poll.totalVoterCount ? Math.round(option.voterCount / post.poll.totalVoterCount * 100) : 0;
+          return <div className="telegram-poll-option" key={option.text}><span style={{ width: `${percent}%` }} aria-hidden="true" /><b>{option.text}</b><small>{percent}%</small></div>;
+        })}</div>
+        <small>{post.poll.totalVoterCount.toLocaleString("ru-RU")} голосов{post.poll.isClosed ? " · опрос завершён" : ""}</small>
+      </section>}
       {post.unsupported && !post.html && post.images.length === 0 && <div className="telegram-unsupported-media">
         <span aria-hidden="true">↗</span>
         <strong>Публикация доступна в Telegram</strong>

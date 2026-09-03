@@ -1,4 +1,8 @@
 import { TELEGRAM_NEWS_CHANNEL, TELEGRAM_NEWS_URL } from "@/src/config/links";
+import { getStoredTelegramNewsPosts } from "@/src/server/storage/database";
+import type { StoredTelegramNewsPost, TelegramPost } from "@/src/server/telegram/types";
+
+export type { TelegramPost } from "@/src/server/telegram/types";
 
 const TELEGRAM_PUBLIC_FEED_URL = `https://t.me/s/${TELEGRAM_NEWS_CHANNEL}`;
 const CACHE_TTL_MS = 90_000;
@@ -8,17 +12,6 @@ const MAX_RESPONSE_BYTES = 2_000_000;
 interface ChannelCache {
   expiresAt: number;
   posts: TelegramPost[];
-}
-
-export interface TelegramPost {
-  id: string;
-  url: string;
-  html: string;
-  images: Array<{ url: string; alt: string }>;
-  publishedAt: string | null;
-  views: string | null;
-  buttons: Array<{ label: string; url: string }>;
-  unsupported: boolean;
 }
 
 export interface TelegramNewsSnapshot {
@@ -70,7 +63,10 @@ export function sanitizeTelegramHtml(input: string): string {
     const tag = rawTag.toLowerCase();
     const closing = source.startsWith("</");
     if (tag === "br") return "<br>";
-    if (simpleTags.has(tag)) return closing ? `</${tag}>` : `<${tag}>`;
+    if (simpleTags.has(tag)) {
+      if (tag === "blockquote" && !closing && /\bexpandable\b/i.test(attributes)) return '<blockquote class="tg-blockquote-expandable">';
+      return closing ? `</${tag}>` : `<${tag}>`;
+    }
     if (tag === "a") {
       if (closing) return "</a>";
       const match = attributes.match(/\bhref=(?:"([^"]*)"|'([^']*)')/i);
@@ -81,6 +77,8 @@ export function sanitizeTelegramHtml(input: string): string {
       if (closing) return "</span>";
       return /\bclass=(?:"[^"]*tg-spoiler[^"]*"|'[^']*tg-spoiler[^']*')/i.test(attributes) ? '<span class="tg-spoiler">' : "<span>";
     }
+    if (tag === "tg-spoiler") return closing ? "</span>" : '<span class="tg-spoiler" tabindex="0">';
+    if (tag === "tg-emoji") return closing ? "</span>" : '<span class="tg-custom-emoji">';
     return "";
   }).trim();
 }
@@ -123,11 +121,67 @@ export function extractTelegramPosts(html: string): TelegramPost[] {
       })
       .slice(0, 4);
 
-    return [{ id, url: `${TELEGRAM_NEWS_URL}/${id}`, html: messageHtml, images, publishedAt, views, buttons, unsupported }];
+    return [{ id, url: `${TELEGRAM_NEWS_URL}/${id}`, html: messageHtml, images, attachments: [], poll: null, publishedAt, views, buttons, unsupported, source: "public" }];
   });
 
   return [...new Map(posts.map((post) => [post.id, post])).values()]
     .sort((left, right) => Number(right.id) - Number(left.id));
+}
+
+function groupStoredPosts(posts: StoredTelegramNewsPost[]) {
+  const groups = new Map<string, StoredTelegramNewsPost>();
+  for (const post of posts) {
+    const key = post.mediaGroupId ? `group:${post.mediaGroupId}` : `post:${post.id}`;
+    const current = groups.get(key);
+    if (!current) {
+      groups.set(key, { ...post, buttons: [...post.buttons], media: [...post.media] });
+      continue;
+    }
+    current.media = [...current.media, ...post.media].filter((media, index, all) => all.findIndex((item) => item.id === media.id) === index);
+    if (!current.html && post.html) current.html = post.html;
+    if (current.buttons.length === 0 && post.buttons.length) current.buttons = [...post.buttons];
+    if (!current.poll && post.poll) current.poll = post.poll;
+    if (post.publishedAt < current.publishedAt) current.publishedAt = post.publishedAt;
+  }
+  return [...groups.values()].sort((left, right) => Number(right.id) - Number(left.id));
+}
+
+function storedPostToPublic(post: StoredTelegramNewsPost): TelegramPost {
+  const attachments = post.media.map((media) => ({
+    id: media.id,
+    type: media.type,
+    url: `/api/news/media?post=${encodeURIComponent(post.id)}&media=${encodeURIComponent(media.id)}`,
+    mimeType: media.mimeType,
+    fileName: media.fileName,
+    width: media.width,
+    height: media.height,
+    duration: media.duration,
+    hasSpoiler: media.hasSpoiler,
+  }));
+  const images = attachments.filter((media) => media.type === "photo" || (media.type === "sticker" && media.mimeType !== "application/x-tgsticker"))
+    .map((media, index) => ({ url: media.url, alt: `Изображение ${index + 1} из публикации ST VILLAGE` }));
+  return {
+    id: post.id,
+    url: post.url,
+    html: post.html,
+    images,
+    attachments,
+    poll: post.poll,
+    publishedAt: post.publishedAt,
+    views: null,
+    buttons: post.buttons,
+    unsupported: false,
+    source: "bot",
+  };
+}
+
+function mergeNewsPosts(publicPosts: TelegramPost[], storedPosts: TelegramPost[]) {
+  const merged = new Map(publicPosts.map((post) => [post.id, post]));
+  for (const stored of storedPosts) {
+    const publicPost = merged.get(stored.id);
+    merged.set(stored.id, { ...stored, views: publicPost?.views ?? null });
+  }
+  return [...merged.values()].sort((left, right) => Number(right.id) - Number(left.id));
 }
 
 function getPublicFeedUrl(before?: number) {
@@ -177,7 +231,16 @@ async function getCachedPosts(before?: number): Promise<TelegramPost[]> {
 
 export async function getTelegramNews(limit: number, before?: number): Promise<TelegramNewsSnapshot> {
   const safeLimit = Math.min(20, Math.max(1, Math.trunc(limit)));
-  const pagePosts = await getCachedPosts(before);
+  const [publicResult, storedResult] = await Promise.allSettled([
+    getCachedPosts(before),
+    getStoredTelegramNewsPosts(before, Math.max(50, safeLimit * 5)),
+  ]);
+  const publicPosts = publicResult.status === "fulfilled" ? publicResult.value : [];
+  const storedPosts = storedResult.status === "fulfilled"
+    ? groupStoredPosts(storedResult.value).map(storedPostToPublic)
+    : [];
+  if (publicPosts.length === 0 && storedPosts.length === 0 && publicResult.status === "rejected") throw publicResult.reason;
+  const pagePosts = mergeNewsPosts(publicPosts, storedPosts);
   const posts = pagePosts.slice(0, safeLimit);
   return {
     channel: TELEGRAM_NEWS_CHANNEL,

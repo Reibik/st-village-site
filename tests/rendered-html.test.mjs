@@ -6,6 +6,7 @@ process.env.STATUS_PROBE_TIMEOUT_MS = "500";
 process.env.STATUS_REGIONAL_CHECKS_DISABLED = "1";
 process.env.SITE_BOT_API_TOKEN = "test-site-bot-token-with-at-least-32-bytes";
 process.env.SITE_BOT_ADMIN_IDS = "274813568";
+process.env.TELEGRAM_NEWS_BOT_TOKEN = "123456:test-telegram-news-token";
 
 const workerUrl = new URL("../dist/server/index.js", import.meta.url);
 workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
@@ -328,6 +329,68 @@ test("Telegram news API paginates older channel posts without exposing the whole
 
   const invalid = await worker.fetch(new Request("http://localhost/api/news?before=not-a-number"), env, context);
   assert.equal(invalid.status, 400);
+});
+
+test("signed bot updates mirror rich Telegram posts and proxy their media", async () => {
+  const newsPayload = {
+    id: "9001",
+    channel: "exitcloud_vpn",
+    html: '<b>Важная новость</b><br><tg-spoiler>секрет</tg-spoiler>',
+    buttons: [{ label: "Открыть кабинет", url: "https://cabinet.stvillage.top/" }],
+    media: [{
+      type: "video", fileId: "BAACAgIAAxkBAAIBexample_file_id", fileUniqueId: "AgADexample_unique",
+      mimeType: "video/mp4", fileName: "update.mp4", width: 1280, height: 720, duration: 12, hasSpoiler: false,
+    }],
+    poll: { question: "Всё нравится?", options: [{ text: "Да", voterCount: 8 }, { text: "Очень", voterCount: 2 }], totalVoterCount: 10, isClosed: false, allowsMultipleAnswers: false },
+    mediaGroupId: null,
+    publishedAt: "2026-09-03T12:00:00+00:00",
+    edited: false,
+  };
+  const body = JSON.stringify(newsPayload);
+  const create = await worker.fetch(await signedBotRequest("/api/bot-admin/news", { method: "POST", body }), env, context);
+  assert.equal([200, 503].includes(create.status), true);
+  assert.equal((await create.json()).post.id, "9001");
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (input) => {
+    const url = String(input);
+    if (url === "https://t.me/s/exitcloud_vpn?before=9002") {
+      return new Response('<div class="tgme_widget_message_wrap"><div data-post="exitcloud_vpn/1"><div class="tgme_widget_message_text">Архив</div></div></div>', { headers: { "content-type": "text/html" } });
+    }
+    if (url.includes("/getFile?file_id=")) {
+      assert.match(url, /^https:\/\/api\.telegram\.org\/bot123456:test-telegram-news-token\/getFile/);
+      return Response.json({ ok: true, result: { file_path: "videos/update.mp4", file_size: 4 } });
+    }
+    if (url.includes("/file/bot123456:test-telegram-news-token/videos/update.mp4")) {
+      return new Response(new Uint8Array([0, 0, 0, 1]), { headers: { "content-type": "video/mp4", "content-length": "4", "accept-ranges": "bytes" } });
+    }
+    return originalFetch(input);
+  };
+  try {
+    const news = await worker.fetch(new Request("http://localhost/api/news?limit=2&before=9002"), env, context);
+    assert.equal(news.status, 200);
+    const payload = await news.json();
+    assert.equal(payload.posts[0].id, "9001");
+    assert.equal(payload.posts[0].source, "bot");
+    assert.match(payload.posts[0].html, /class="tg-spoiler"/);
+    assert.equal(payload.posts[0].attachments[0].type, "video");
+    assert.equal(payload.posts[0].poll.totalVoterCount, 10);
+
+    const media = await worker.fetch(new Request(`http://localhost${payload.posts[0].attachments[0].url}`), env, context);
+    assert.equal(media.status, 200);
+    assert.equal(media.headers.get("content-type"), "video/mp4");
+    assert.equal((await media.arrayBuffer()).byteLength, 4);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  const botSync = await readFile(new URL("../integrations/bedolaga-site-admin/app/handlers/site_news_sync.py", import.meta.url), "utf8");
+  const exampleEnv = await readFile(new URL("../.env.example", import.meta.url), "utf8");
+  assert.match(botSync, /dp\.channel_post\.register/);
+  assert.match(botSync, /dp\.edited_channel_post\.register/);
+  assert.match(botSync, /message\.html_(?:text|caption)/);
+  assert.match(botSync, /media_group_id/);
+  assert.match(exampleEnv, /TELEGRAM_NEWS_BOT_TOKEN=/);
 });
 
 test("pricing is synchronized through the public Bedolaga landing API", async () => {

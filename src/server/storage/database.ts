@@ -1,5 +1,6 @@
 import { schemaStatements } from "@/db/schema";
 import type { StatusSnapshot } from "@/src/server/status/types";
+import type { StoredTelegramNewsPost } from "@/src/server/telegram/types";
 
 type D1Result<T = Record<string, unknown>> = { results?: T[]; success?: boolean };
 type D1Statement = {
@@ -79,6 +80,7 @@ const memoryReviews: PublicReview[] = [];
 const memoryAlerts = new Map<string, string>();
 const memoryAnnouncements: SiteAnnouncement[] = [];
 const memoryAudit: SiteAdminAuditEntry[] = [];
+const memoryTelegramNews: StoredTelegramNewsPost[] = [];
 
 type StoredReview = PublicReview & { status: "pending" | "approved" | "rejected"; moderatedAt?: string };
 type FileState = {
@@ -89,6 +91,7 @@ type FileState = {
   metrics: Record<string, number>;
   announcements: SiteAnnouncement[];
   audit: SiteAdminAuditEntry[];
+  telegramNews: StoredTelegramNewsPost[];
 };
 type FileStore = { path: string; state: FileState };
 
@@ -96,7 +99,7 @@ let fileStorePromise: Promise<FileStore | null> | null = null;
 let fileWriteQueue: Promise<boolean> = Promise.resolve(true);
 
 function emptyFileState(): FileState {
-  return { samples: [], incidents: [], reviews: [], alerts: {}, metrics: {}, announcements: [], audit: [] };
+  return { samples: [], incidents: [], reviews: [], alerts: {}, metrics: {}, announcements: [], audit: [], telegramNews: [] };
 }
 
 function defaultFileStorePath(channel: string) {
@@ -534,6 +537,88 @@ export async function getSiteAdminAudit(limit = 20): Promise<SiteAdminAuditEntry
     entityType: String(row.entity_type), entityId: row.entity_id ? String(row.entity_id) : null,
     details: JSON.parse(String(row.details || "{}")) as Record<string, unknown>, createdAt: String(row.created_at),
   }));
+}
+
+function telegramNewsFromRow(row: Record<string, unknown>): StoredTelegramNewsPost {
+  return {
+    id: String(row.message_id),
+    channel: String(row.channel),
+    url: String(row.url),
+    html: String(row.html || ""),
+    buttons: JSON.parse(String(row.buttons || "[]")) as StoredTelegramNewsPost["buttons"],
+    media: JSON.parse(String(row.media || "[]")) as StoredTelegramNewsPost["media"],
+    poll: row.poll ? JSON.parse(String(row.poll)) as StoredTelegramNewsPost["poll"] : null,
+    mediaGroupId: row.media_group_id ? String(row.media_group_id) : null,
+    publishedAt: String(row.published_at),
+    updatedAt: String(row.updated_at),
+  };
+}
+
+export async function getStoredTelegramNewsPosts(before?: number, limit = 100): Promise<StoredTelegramNewsPost[]> {
+  const safeLimit = Math.min(200, Math.max(1, Math.floor(limit)));
+  const database = await getDatabase();
+  if (!database) {
+    const items = (await getFileStore())?.state.telegramNews ?? memoryTelegramNews;
+    return [...items]
+      .filter((item) => !before || Number(item.id) < before)
+      .sort((left, right) => Number(right.id) - Number(left.id))
+      .slice(0, safeLimit);
+  }
+  const statement = before
+    ? database.prepare(`SELECT message_id, channel, url, html, buttons, media, poll, media_group_id, published_at, updated_at
+      FROM telegram_news WHERE CAST(message_id AS INTEGER) < ? ORDER BY CAST(message_id AS INTEGER) DESC LIMIT ?`).bind(before, safeLimit)
+    : database.prepare(`SELECT message_id, channel, url, html, buttons, media, poll, media_group_id, published_at, updated_at
+      FROM telegram_news ORDER BY CAST(message_id AS INTEGER) DESC LIMIT ?`).bind(safeLimit);
+  const rows = (await statement.all<Record<string, unknown>>()).results ?? [];
+  return rows.map(telegramNewsFromRow);
+}
+
+export async function getStoredTelegramNewsPost(id: string): Promise<StoredTelegramNewsPost | null> {
+  const database = await getDatabase();
+  if (!database) {
+    const items = (await getFileStore())?.state.telegramNews ?? memoryTelegramNews;
+    return items.find((item) => item.id === id) ?? null;
+  }
+  const row = await database.prepare(`SELECT message_id, channel, url, html, buttons, media, poll, media_group_id, published_at, updated_at
+    FROM telegram_news WHERE message_id = ?`).bind(id).first<Record<string, unknown>>();
+  return row ? telegramNewsFromRow(row) : null;
+}
+
+export async function findStoredTelegramNewsMedia(postId: string, mediaId: string) {
+  const direct = await getStoredTelegramNewsPost(postId);
+  const directMedia = direct?.media.find((item) => item.id === mediaId);
+  if (directMedia) return directMedia;
+  const recent = await getStoredTelegramNewsPosts(undefined, 200);
+  return recent.find((post) => post.media.some((item) => item.id === mediaId))?.media.find((item) => item.id === mediaId) ?? null;
+}
+
+export async function saveStoredTelegramNewsPost(post: StoredTelegramNewsPost) {
+  const database = await getDatabase();
+  if (!database) {
+    const store = await getFileStore();
+    if (!store) {
+      const index = memoryTelegramNews.findIndex((item) => item.id === post.id);
+      if (index >= 0) memoryTelegramNews[index] = post;
+      else memoryTelegramNews.unshift(post);
+      memoryTelegramNews.sort((left, right) => Number(right.id) - Number(left.id));
+      if (memoryTelegramNews.length > 1_000) memoryTelegramNews.length = 1_000;
+      return false;
+    }
+    store.state.telegramNews = [post, ...(store.state.telegramNews ?? []).filter((item) => item.id !== post.id)]
+      .sort((left, right) => Number(right.id) - Number(left.id))
+      .slice(0, 1_000);
+    return persistFileStore(store);
+  }
+  await database.prepare(`INSERT INTO telegram_news
+    (message_id, channel, url, html, buttons, media, poll, media_group_id, published_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(message_id) DO UPDATE SET channel = excluded.channel, url = excluded.url,
+    html = excluded.html, buttons = excluded.buttons, media = excluded.media, poll = excluded.poll,
+    media_group_id = excluded.media_group_id, published_at = excluded.published_at, updated_at = excluded.updated_at`).bind(
+      post.id, post.channel, post.url, post.html, JSON.stringify(post.buttons), JSON.stringify(post.media),
+      post.poll ? JSON.stringify(post.poll) : null, post.mediaGroupId, post.publishedAt, post.updatedAt,
+    ).run();
+  return true;
 }
 
 export async function cleanupObservability() {

@@ -18,6 +18,7 @@ export interface TelegramPost {
   publishedAt: string | null;
   views: string | null;
   buttons: Array<{ label: string; url: string }>;
+  unsupported: boolean;
 }
 
 export interface TelegramNewsSnapshot {
@@ -103,6 +104,7 @@ export function extractTelegramPosts(html: string): TelegramPost[] {
     const messageHtml = sanitizeTelegramHtml(messageMatch?.[1] ?? "");
     const publishedAt = fragment.match(/<time[^>]+datetime="([^"]+)"/i)?.[1] ?? null;
     const views = stripMarkup(fragment.match(/<span class="tgme_widget_message_views">([\s\S]*?)<\/span>/i)?.[1] ?? "") || null;
+    const unsupported = /message_media_not_supported_wrap/i.test(fragment);
 
     const mediaUrls = [
       ...Array.from(fragment.matchAll(/tgme_widget_message_photo_wrap[^>]+background-image:url\('([^']+)'\)/gi), (match) => match[1]),
@@ -121,7 +123,7 @@ export function extractTelegramPosts(html: string): TelegramPost[] {
       })
       .slice(0, 4);
 
-    return [{ id, url: `${TELEGRAM_NEWS_URL}/${id}`, html: messageHtml, images, publishedAt, views, buttons }];
+    return [{ id, url: `${TELEGRAM_NEWS_URL}/${id}`, html: messageHtml, images, publishedAt, views, buttons, unsupported }];
   });
 
   return [...new Map(posts.map((post) => [post.id, post])).values()]

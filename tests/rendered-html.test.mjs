@@ -225,7 +225,9 @@ test("Telegram news integration uses the public channel without exposing credent
   assert.match(feed, /REFRESH_INTERVAL_MS/);
   assert.match(route, /beforeValue/);
   assert.match(channel, /searchParams\.set\("before"/);
+  assert.match(channel, /message_media_not_supported_wrap/);
   assert.match(feed, /Показать ещё новости/);
+  assert.match(card, /Публикация доступна в Telegram/);
   assert.match(feed, /mergePosts/);
   assert.match(card, /dangerouslySetInnerHTML/);
   assert.match(caddy, /img-src[^\n]+https:\/\/\*\.telesco\.pe/);
@@ -239,7 +241,7 @@ test("Telegram news API paginates older channel posts without exposing the whole
     if (String(input) === "https://t.me/s/exitcloud_vpn?before=191") {
       assert.equal(init?.headers?.Accept, "text/html,application/xhtml+xml");
       return new Response(`
-        <div class="tgme_widget_message_wrap"><div data-post="exitcloud_vpn/188"><div class="tgme_widget_message_text">Старая новость</div><time datetime="2026-08-01T10:00:00+00:00"></time></div></div>
+        <div class="tgme_widget_message_wrap"><div data-post="exitcloud_vpn/188"><div class="message_media_not_supported_wrap">Открыть в Telegram</div><time datetime="2026-08-01T10:00:00+00:00"></time></div></div>
         <div class="tgme_widget_message_wrap"><div data-post="exitcloud_vpn/189"><div class="tgme_widget_message_text">Следующая новость</div><time datetime="2026-08-02T10:00:00+00:00"></time></div></div>
       `, { headers: { "content-type": "text/html" } });
     }
@@ -250,6 +252,7 @@ test("Telegram news API paginates older channel posts without exposing the whole
     assert.equal(response.status, 200);
     const payload = await response.json();
     assert.deepEqual(payload.posts.map((post) => post.id), ["189", "188"]);
+    assert.equal(payload.posts[1].unsupported, true);
     assert.equal(payload.nextBefore, "188");
     assert.equal(payload.hasMore, true);
   } finally {

@@ -5,7 +5,7 @@ import { telegramMessageToNewsPayload } from "./telegram-format.mjs";
 
 const botToken = (process.env.TELEGRAM_NEWS_BOT_TOKEN ?? "").trim();
 const siteToken = (process.env.SITE_BOT_API_TOKEN ?? "").trim();
-const actorId = (process.env.SITE_NEWS_ACTOR_ID ?? "").trim();
+const actorId = (process.env.SITE_NEWS_ACTOR_ID ?? process.env.SITE_BOT_ADMIN_IDS?.split(",")[0] ?? "").trim();
 const channel = (process.env.TELEGRAM_NEWS_CHANNEL ?? "exitcloud_vpn").trim().replace(/^@/, "").toLowerCase();
 const channelId = (process.env.TELEGRAM_NEWS_CHANNEL_ID ?? "").trim();
 const siteUrl = (process.env.SITE_NEWS_SYNC_URL ?? "http://127.0.0.1:3001").replace(/\/$/, "");

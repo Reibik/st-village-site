@@ -18,7 +18,7 @@ fi
   exit 1
 }
 
-required=(TELEGRAM_NEWS_BOT_TOKEN SITE_BOT_API_TOKEN SITE_BOT_ADMIN_IDS SITE_NEWS_ACTOR_ID)
+required=(TELEGRAM_NEWS_BOT_TOKEN SITE_BOT_API_TOKEN SITE_BOT_ADMIN_IDS)
 set -a
 source "$environment_file"
 set +a

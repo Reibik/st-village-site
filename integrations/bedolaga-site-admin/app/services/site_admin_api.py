@@ -72,6 +72,3 @@ class SiteAdminApi:
 
     async def audit(self, actor_id: int) -> list[dict[str, Any]]:
         return (await self.request("GET", "/api/bot-admin/audit?limit=15", actor_id)).get("audit", [])
-
-    async def sync_news(self, actor_id: int, payload: dict[str, Any]) -> dict[str, Any]:
-        return await self.request("POST", "/api/bot-admin/news", actor_id, payload)

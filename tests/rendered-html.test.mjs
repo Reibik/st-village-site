@@ -384,13 +384,23 @@ test("signed bot updates mirror rich Telegram posts and proxy their media", asyn
     globalThis.fetch = originalFetch;
   }
 
-  const botSync = await readFile(new URL("../integrations/bedolaga-site-admin/app/handlers/site_news_sync.py", import.meta.url), "utf8");
+  const botSync = await readFile(new URL("../integrations/telegram-news-bot/sync.mjs", import.meta.url), "utf8");
+  const botFormatter = await import(new URL("../integrations/telegram-news-bot/telegram-format.mjs", import.meta.url));
+  const standalonePayload = botFormatter.telegramMessageToNewsPayload({
+    message_id: 77, date: 1788436800, text: "Новая публикация",
+    entities: [{ type: "bold", offset: 0, length: 5 }],
+    chat: { username: "exitcloud_vpn" },
+    photo: [{ file_id: "photo-file-id", file_unique_id: "photo-unique-id", width: 640, height: 640 }],
+  }, "exitcloud_vpn");
   const exampleEnv = await readFile(new URL("../.env.example", import.meta.url), "utf8");
-  assert.match(botSync, /dp\.channel_post\.register/);
-  assert.match(botSync, /dp\.edited_channel_post\.register/);
-  assert.match(botSync, /message\.html_(?:text|caption)/);
-  assert.match(botSync, /media_group_id/);
+  assert.match(botSync, /"channel_post", "edited_channel_post"/);
+  assert.match(botSync, /getUpdates/);
+  assert.match(botSync, /createHmac\("sha256"/);
+  assert.match(standalonePayload.html, /^<b>Новая<\/b>/);
+  assert.equal(standalonePayload.media[0].type, "photo");
+  assert.equal(standalonePayload.id, "77");
   assert.match(exampleEnv, /TELEGRAM_NEWS_BOT_TOKEN=/);
+  assert.match(exampleEnv, /SITE_NEWS_ACTOR_ID=/);
 });
 
 test("pricing is synchronized through the public Bedolaga landing API", async () => {

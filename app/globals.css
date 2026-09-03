@@ -302,6 +302,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .telegram-post-skeleton { min-height: 430px; border: 1px solid var(--line); border-radius: 22px; background: linear-gradient(105deg, var(--surface) 30%, var(--surface-raised) 48%, var(--surface) 66%); background-size: 260% 100%; animation: telegram-skeleton 1.5s ease-in-out infinite; }
 @keyframes telegram-skeleton { to { background-position-x: -200%; } }
 .telegram-feed-note { margin: 20px 0 0; color: var(--muted); text-align: center; font-size: 12px; }
+.telegram-feed-more { margin-top: 30px; display: grid; justify-items: center; gap: 10px; }.telegram-feed-more .button { min-width: 230px; }.telegram-feed-more .button:disabled { cursor: wait; opacity: .68; transform: none; }.telegram-feed-more small,.telegram-feed-complete { color: var(--muted); font-size: 12px; }.telegram-feed-complete { margin: 30px 0 0; text-align: center; }
 .news-unavailable { padding: 66px 26px; text-align: center; border: 1px dashed var(--line); border-radius: 22px; background: var(--surface); }
 .news-unavailable-icon { width: 54px; height: 54px; margin: 0 auto 18px; display: grid; place-items: center; border-radius: 17px; background: var(--accent-soft); color: var(--accent); font-size: 23px; }
 .news-unavailable h2 { margin: 0 0 10px; font-size: 25px; }

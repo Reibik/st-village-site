@@ -30,7 +30,7 @@ export default function NewsPage() {
             Открыть канал <span aria-hidden="true">↗</span>
           </a>
         </div>
-        <TelegramNewsFeed limit={8} />
+        <TelegramNewsFeed limit={12} />
       </section>
     </>
   );

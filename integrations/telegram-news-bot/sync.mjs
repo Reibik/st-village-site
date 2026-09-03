@@ -72,6 +72,11 @@ async function syncPost(message, edited) {
 
 async function main() {
   const identity = await telegram("getMe", {});
+  const webhook = await telegram("getWebhookInfo", {});
+  if (webhook.url) {
+    await telegram("deleteWebhook", { drop_pending_updates: false });
+    console.log("Previous Telegram webhook disabled; pending updates preserved");
+  }
   console.log(`ST VILLAGE news sync started as @${identity.username ?? identity.id} for @${channel}`);
   let offset = await loadOffset();
   let delay = 1_000;

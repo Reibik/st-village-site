@@ -395,6 +395,8 @@ test("signed bot updates mirror rich Telegram posts and proxy their media", asyn
   const exampleEnv = await readFile(new URL("../.env.example", import.meta.url), "utf8");
   assert.match(botSync, /"channel_post", "edited_channel_post"/);
   assert.match(botSync, /getUpdates/);
+  assert.match(botSync, /deleteWebhook/);
+  assert.match(botSync, /drop_pending_updates: false/);
   assert.match(botSync, /createHmac\("sha256"/);
   assert.match(standalonePayload.html, /^<b>Новая<\/b>/);
   assert.equal(standalonePayload.media[0].type, "photo");

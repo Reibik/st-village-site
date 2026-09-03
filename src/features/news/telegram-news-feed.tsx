@@ -12,6 +12,7 @@ interface TelegramPost {
   publishedAt: string | null;
   views: string | null;
   buttons: Array<{ label: string; url: string }>;
+  unsupported: boolean;
 }
 interface TelegramNewsPayload { channel: string; posts: TelegramPost[]; nextBefore: string | null; hasMore: boolean }
 interface TelegramNewsFeedProps { limit?: number; compact?: boolean }

@@ -14,6 +14,7 @@ interface TelegramPost {
   publishedAt: string | null;
   views: string | null;
   buttons: Array<{ label: string; url: string }>;
+  unsupported: boolean;
 }
 
 function formatDate(value: string | null) {
@@ -39,6 +40,12 @@ export function TelegramPostCard({ post }: { post: TelegramPost }) {
           {post.images.map((image) => <a href={post.url} target="_blank" rel="noreferrer" key={image.url}><img src={image.url} alt={image.alt} loading="lazy" /></a>)}
         </div>
       )}
+      {post.unsupported && !post.html && post.images.length === 0 && <div className="telegram-unsupported-media">
+        <span aria-hidden="true">↗</span>
+        <strong>Публикация доступна в Telegram</strong>
+        <p>Telegram не передаёт содержимое этого типа в публичную веб-ленту. Откройте оригинал, чтобы посмотреть его полностью.</p>
+        <a className="button button-secondary button-small" href={post.url} target="_blank" rel="noreferrer">Открыть публикацию <span aria-hidden="true">↗</span></a>
+      </div>}
       {post.html && <div className="telegram-message" dangerouslySetInnerHTML={{ __html: post.html }} />}
       {post.buttons.length > 0 && <div className="telegram-inline-buttons">{post.buttons.map((button) => <a href={button.url} target="_blank" rel="noreferrer" key={`${button.url}-${button.label}`}>{button.label}</a>)}</div>}
       <footer className="telegram-post-footer">

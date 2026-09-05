@@ -11,7 +11,7 @@ import type {
   TelegramNewsPoll,
 } from "@/src/server/telegram/types";
 
-const MAX_BODY_BYTES = 256_000;
+const MAX_BODY_BYTES = 1_000_000;
 const mediaTypes = new Set<TelegramNewsMediaType>(["photo", "video", "animation", "document", "audio", "voice", "video_note", "sticker"]);
 
 function finiteInteger(value: unknown, minimum: number, maximum: number) {
@@ -40,7 +40,7 @@ function parseButtons(value: unknown): TelegramNewsButton[] | null {
 }
 
 function parseMedia(value: unknown): StoredTelegramNewsMedia[] | null {
-  if (!Array.isArray(value) || value.length > 20) return null;
+  if (!Array.isArray(value) || value.length > 50) return null;
   const media = value.map((item, index) => {
     const record = item && typeof item === "object" ? item as Record<string, unknown> : {};
     const type = String(record.type || "") as TelegramNewsMediaType;

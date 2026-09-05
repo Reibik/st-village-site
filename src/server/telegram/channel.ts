@@ -57,12 +57,18 @@ function isAllowedTelegramMedia(rawUrl: string) {
 
 export function sanitizeTelegramHtml(input: string): string {
   const withoutExecutableBlocks = input.replace(/<(script|style)[^>]*>[\s\S]*?<\/\1>/gi, "");
-  const simpleTags = new Set(["b", "strong", "i", "em", "u", "s", "strike", "del", "code", "pre", "blockquote"]);
+  const simpleTags = new Set([
+    "b", "strong", "i", "em", "u", "s", "strike", "del", "code", "pre", "blockquote",
+    "p", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "li", "mark", "sub", "sup",
+    "footer", "figure", "figcaption", "cite", "table", "tbody", "tr", "th", "td", "summary",
+  ]);
 
   return withoutExecutableBlocks.replace(/<\/?([a-zA-Z0-9-]+)([^>]*)>/g, (source, rawTag: string, attributes: string) => {
     const tag = rawTag.toLowerCase();
     const closing = source.startsWith("</");
     if (tag === "br") return "<br>";
+    if (tag === "hr") return "<hr>";
+    if (tag === "details") return closing ? "</details>" : /\bopen\b/i.test(attributes) ? "<details open>" : "<details>";
     if (simpleTags.has(tag)) {
       if (tag === "blockquote" && !closing && /\bexpandable\b/i.test(attributes)) return '<blockquote class="tg-blockquote-expandable">';
       return closing ? `</${tag}>` : `<${tag}>`;

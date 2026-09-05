@@ -401,6 +401,28 @@ test("signed bot updates mirror rich Telegram posts and proxy their media", asyn
   assert.match(standalonePayload.html, /^<b>Новая<\/b>/);
   assert.equal(standalonePayload.media[0].type, "photo");
   assert.equal(standalonePayload.id, "77");
+
+  const richPayload = botFormatter.telegramMessageToNewsPayload({
+    message_id: 211,
+    date: 1788640815,
+    chat: { username: "exitcloud_vpn" },
+    rich_message: {
+      blocks: [
+        { type: "heading", size: 2, text: [{ type: "bold", text: "Большая новость" }] },
+        { type: "paragraph", text: ["Все возможности ", { type: "url", text: "кабинета", url: "https://cabinet.stvillage.top/" }] },
+        { type: "list", items: [
+          { label: "01", blocks: [{ type: "paragraph", text: "Быстро" }] },
+          { label: "02", has_checkbox: true, is_checked: true, blocks: [{ type: "paragraph", text: "Надёжно" }] },
+        ] },
+        { type: "photo", photo: [{ file_id: "rich-photo-file", file_unique_id: "rich-photo-unique", width: 1280, height: 720 }], caption: { text: "Подпись" } },
+        { type: "buttons", buttons: [{ text: "Открыть кабинет", url: "https://cabinet.stvillage.top/", style: "primary" }] },
+      ],
+    },
+  }, "exitcloud_vpn");
+  assert.match(richPayload.html, /<h2><b>Большая новость<\/b><\/h2>/);
+  assert.match(richPayload.html, /<ul>.*Быстро.*Надёжно.*<\/ul>/);
+  assert.equal(richPayload.media[0].type, "photo");
+  assert.equal(richPayload.buttons[0].label, "Открыть кабинет");
   assert.match(exampleEnv, /TELEGRAM_NEWS_BOT_TOKEN=/);
   assert.match(exampleEnv, /SITE_NEWS_ACTOR_ID=/);
 });

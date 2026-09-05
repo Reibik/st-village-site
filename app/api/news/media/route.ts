@@ -37,6 +37,22 @@ function safeFileName(value: string | null) {
   return (value || "telegram-file").replace(/[^A-Za-z0-9._ -]/g, "_").slice(0, 160) || "telegram-file";
 }
 
+function safeMediaContentType(value: string | null) {
+  const normalized = value?.split(";", 1)[0]?.trim().toLowerCase() ?? "";
+  return /^(?:image|video|audio)\/[a-z0-9][a-z0-9.+-]*$/.test(normalized)
+    || /^application\/(?:pdf|octet-stream|x-tgsticker)$/.test(normalized)
+    ? normalized
+    : null;
+}
+
+function resolveMediaContentType(upstream: string | null, stored: string | null) {
+  const upstreamType = safeMediaContentType(upstream);
+  const storedType = safeMediaContentType(stored);
+  return !upstreamType || upstreamType === "application/octet-stream"
+    ? storedType || "application/octet-stream"
+    : upstreamType;
+}
+
 async function proxyBotMedia(request: Request, postId: string, mediaId: string) {
   if (!/^\d{1,20}$/.test(postId) || !/^[A-Za-z0-9_-]{4,190}$/.test(mediaId)) return new Response("Invalid media reference", { status: 400 });
   const media = await findStoredTelegramNewsMedia(postId, mediaId);
@@ -65,7 +81,7 @@ async function proxyBotMedia(request: Request, postId: string, mediaId: string) 
   if (contentLength > MAX_BOT_MEDIA_BYTES) return new Response("Media is too large", { status: 413 });
   const headers = new Headers({
     "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
-    "Content-Type": telegramResponse.headers.get("content-type") || media.mimeType || "application/octet-stream",
+    "Content-Type": resolveMediaContentType(telegramResponse.headers.get("content-type"), media.mimeType),
     "Content-Disposition": `${new URL(request.url).searchParams.get("download") === "1" ? "attachment" : "inline"}; filename="${safeFileName(media.fileName)}"`,
     "X-Content-Type-Options": "nosniff",
   });

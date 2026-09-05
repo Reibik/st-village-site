@@ -362,7 +362,7 @@ test("signed bot updates mirror rich Telegram posts and proxy their media", asyn
       return Response.json({ ok: true, result: { file_path: "videos/update.mp4", file_size: 4 } });
     }
     if (url.includes("/file/bot123456:test-telegram-news-token/videos/update.mp4")) {
-      return new Response(new Uint8Array([0, 0, 0, 1]), { headers: { "content-type": "video/mp4", "content-length": "4", "accept-ranges": "bytes" } });
+      return new Response(new Uint8Array([0, 0, 0, 1]), { headers: { "content-type": "application/octet-stream", "content-length": "4", "accept-ranges": "bytes" } });
     }
     return originalFetch(input);
   };

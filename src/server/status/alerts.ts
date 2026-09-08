@@ -29,7 +29,8 @@ export async function notifyStatusChange(snapshot: StatusSnapshot) {
 
   const token = process.env.STATUS_ALERT_TELEGRAM_BOT_TOKEN?.trim();
   const chatId = process.env.STATUS_ALERT_TELEGRAM_CHAT_ID?.trim();
-  if (!token || !chatId) return false;
+  const newsToken = process.env.TELEGRAM_NEWS_BOT_TOKEN?.trim();
+  if (!token || !chatId || process.env.STATUS_TELEGRAM_NOTIFICATIONS_DISABLED === "1" || token === newsToken) return false;
 
   const affected = affectedItems
     .slice(0, 8)

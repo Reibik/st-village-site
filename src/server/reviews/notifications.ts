@@ -12,7 +12,8 @@ function escapeHtml(value: string) {
 export async function notifyReviewSubmission(review: SubmittedReview, moderationUrl: string) {
   const token = process.env.STATUS_ALERT_TELEGRAM_BOT_TOKEN?.trim();
   const chatId = process.env.STATUS_ALERT_TELEGRAM_CHAT_ID?.trim();
-  if (!token || !chatId) return false;
+  const newsToken = process.env.TELEGRAM_NEWS_BOT_TOKEN?.trim();
+  if (!token || !chatId || process.env.STATUS_TELEGRAM_NOTIFICATIONS_DISABLED === "1" || token === newsToken) return false;
 
   const text = [
     "📝 <b>Новый отзыв на ST VILLAGE</b>",

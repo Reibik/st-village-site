@@ -1,0 +1,38 @@
+[Unit]
+Description=ST VILLAGE Telegram news synchronization bot
+After=network-online.target st-village-site.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=stvillage-web
+Group=stvillage-web
+WorkingDirectory=/opt/st-village-site/current
+Environment=NODE_ENV=production
+EnvironmentFile=/etc/st-village/site.env
+Environment=SITE_NEWS_SYNC_URL=http://127.0.0.1:3000
+Environment=SITE_NEWS_OFFSET_FILE=/opt/st-village-site/data/telegram-news-offset.json
+ExecStart=/usr/local/bin/node /opt/st-village-site/current/integrations/telegram-news-bot/sync.mjs
+Restart=always
+RestartSec=5s
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=full
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+LockPersonality=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+SystemCallArchitectures=native
+UMask=0077
+ReadWritePaths=/opt/st-village-site/data
+
+[Install]
+WantedBy=multi-user.target

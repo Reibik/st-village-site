@@ -4,6 +4,9 @@ import test from "node:test";
 
 process.env.STATUS_PROBE_TIMEOUT_MS = "500";
 process.env.STATUS_REGIONAL_CHECKS_DISABLED = "1";
+process.env.SITE_BOT_API_TOKEN = "test-site-bot-token-with-at-least-32-bytes";
+process.env.SITE_BOT_ADMIN_IDS = "274813568";
+process.env.TELEGRAM_NEWS_BOT_TOKEN = "123456:test-telegram-news-token";
 
 const workerUrl = new URL("../dist/server/index.js", import.meta.url);
 workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
@@ -13,6 +16,20 @@ const env = {
   ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) },
 };
 const context = { waitUntil() {}, passThroughOnException() {} };
+
+async function signedBotRequest(path, options = {}) {
+  const method = options.method ?? "GET";
+  const body = options.body ?? "";
+  const timestamp = String(Math.floor(Date.now() / 1000));
+  const nonce = crypto.randomUUID();
+  const canonical = [timestamp, nonce, method, path, body].join("\n");
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(process.env.SITE_BOT_API_TOKEN), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const signature = Array.from(new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(canonical))), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return new Request(`http://localhost${path}`, { ...options, method, body: body || undefined, headers: {
+    "content-type": "application/json", "x-st-village-bot-actor": "274813568",
+    "x-st-village-bot-timestamp": timestamp, "x-st-village-bot-nonce": nonce, "x-st-village-bot-signature": signature,
+  } });
+}
 
 test("server-renders the ST VILLAGE public home page", async () => {
   const response = await worker.fetch(new Request("http://localhost/", { headers: { accept: "text/html" } }), env, context);
@@ -261,6 +278,47 @@ test("Telegram news API paginates older channel posts without exposing the whole
 
   const invalid = await worker.fetch(new Request("http://localhost/api/news?before=not-a-number"), env, context);
   assert.equal(invalid.status, 400);
+});
+
+test("ordinary and rich Telegram posts keep formatting and media", async () => {
+  const formatter = await import(new URL("../integrations/telegram-news-bot/telegram-format.mjs", import.meta.url));
+  const regularText = "Жирный Курсив Подчеркнут Зачеркнут Секрет Код\nЦитата\nСсылка @support";
+  const entity = (type, value, extra = {}) => ({ type, offset: regularText.indexOf(value), length: value.length, ...extra });
+  const regular = formatter.telegramMessageToNewsPayload({
+    message_id: 77, date: 1788436800, caption: regularText,
+    caption_entities: [
+      entity("bold", "Жирный"), entity("italic", "Курсив"), entity("underline", "Подчеркнут"),
+      entity("strikethrough", "Зачеркнут"), entity("spoiler", "Секрет"), entity("code", "Код"),
+      entity("blockquote", "Цитата"), entity("text_link", "Ссылка", { url: "https://stvillage.top/news" }),
+      entity("mention", "@support"),
+    ],
+    photo: [{ file_id: "photo-file-id", file_unique_id: "photo-unique-id", width: 640, height: 640 }],
+  }, "exitcloud_vpn");
+  assert.match(regular.html, /^<b>Жирный<\/b> <i>Курсив<\/i>/);
+  assert.match(regular.html, /<u>Подчеркнут<\/u>.*<s>Зачеркнут<\/s>.*<tg-spoiler>Секрет<\/tg-spoiler>/);
+  assert.match(regular.html, /<code>Код<\/code><br><blockquote>Цитата<\/blockquote><br>/);
+  assert.match(regular.html, /https:\/\/t\.me\/support/);
+  assert.equal(regular.media[0].type, "photo");
+
+  const rich = formatter.telegramMessageToNewsPayload({
+    message_id: 211, date: 1788640815,
+    rich_message: { blocks: [
+      { type: "heading", size: 2, text: [{ type: "bold", text: "Большая новость" }] },
+      { type: "paragraph", text: ["Открыть ", { type: "url", text: "кабинет", url: "https://cabinet.stvillage.top/" }] },
+      { type: "list", items: [{ label: "01", blocks: [{ type: "paragraph", text: "Быстро" }] }] },
+      { type: "photo", photo: [{ file_id: "rich-photo-file", file_unique_id: "rich-photo-unique", width: 1280, height: 720 }], caption: { text: "Подпись" } },
+      { type: "buttons", buttons: [{ text: "Открыть кабинет", url: "https://cabinet.stvillage.top/", style: "primary" }] },
+    ] },
+  }, "exitcloud_vpn");
+  assert.match(rich.html, /<h2><b>Большая новость<\/b><\/h2>/);
+  assert.match(rich.html, /<ul>.*Быстро.*<\/ul>/);
+  assert.equal(rich.media[0].type, "photo");
+  assert.equal(rich.buttons[0].style, "primary");
+
+  const body = JSON.stringify(rich);
+  const stored = await worker.fetch(await signedBotRequest("/api/bot-admin/news", { method: "POST", body }), env, context);
+  assert.equal([200, 503].includes(stored.status), true);
+  assert.equal((await stored.json()).post.id, "211");
 });
 
 test("pricing is synchronized through the public Bedolaga landing API", async () => {

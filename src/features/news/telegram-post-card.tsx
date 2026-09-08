@@ -65,7 +65,7 @@ export function TelegramPostCard({ post }: { post: TelegramPost }) {
         <a className="button button-secondary button-small" href={post.url} target="_blank" rel="noreferrer">Открыть публикацию <span aria-hidden="true">↗</span></a>
       </div>}
       {post.html && <div className="telegram-message" dangerouslySetInnerHTML={{ __html: post.html }} />}
-      {post.buttons.length > 0 && <div className="telegram-inline-buttons">{post.buttons.map((button) => <a href={button.url} target="_blank" rel="noreferrer" key={`${button.url}-${button.label}`}>{button.label}</a>)}</div>}
+      {post.buttons.length > 0 && <div className="telegram-inline-buttons">{post.buttons.map((button) => <a className={button.style ? `telegram-inline-button-${button.style}` : undefined} href={button.url} target="_blank" rel="noreferrer" key={`${button.url}-${button.label}`}>{button.label}</a>)}</div>}
       <footer className="telegram-post-footer">
         <span>{post.views ? `${post.views} просмотров` : "Telegram"}</span>
         <a href={post.url} target="_blank" rel="noreferrer">Открыть публикацию <span aria-hidden="true">↗</span></a>

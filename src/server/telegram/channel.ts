@@ -69,6 +69,12 @@ export function sanitizeTelegramHtml(input: string): string {
     if (tag === "br") return "<br>";
     if (tag === "hr") return "<hr>";
     if (tag === "details") return closing ? "</details>" : /\bopen\b/i.test(attributes) ? "<details open>" : "<details>";
+    if (tag === "time") {
+      if (closing) return "</time>";
+      const match = attributes.match(/\bdatetime=(?:"([^"]*)"|'([^']*)')/i);
+      const dateTime = match?.[1] ?? match?.[2] ?? "";
+      return Number.isNaN(Date.parse(dateTime)) ? "<time>" : `<time datetime="${escapeAttribute(dateTime)}">`;
+    }
     if (simpleTags.has(tag)) {
       if (tag === "blockquote" && !closing && /\bexpandable\b/i.test(attributes)) return '<blockquote class="tg-blockquote-expandable">';
       return closing ? `</${tag}>` : `<${tag}>`;

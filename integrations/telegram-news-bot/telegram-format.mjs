@@ -43,6 +43,10 @@ function richTextToHtml(value, depth = 0) {
     marked: ["<mark>", "</mark>"], code: ["<code>", "</code>"],
   };
   if (wrappers[value.type]) return `${wrappers[value.type][0]}${content}${wrappers[value.type][1]}`;
+  if (value.type === "date_time") {
+    const date = new Date(Number(value.unix_time) * 1_000);
+    return Number.isFinite(date.getTime()) ? `<time datetime="${date.toISOString()}">${content}</time>` : content;
+  }
   if (value.type === "custom_emoji") {
     return `<tg-emoji emoji-id="${escapeAttribute(value.custom_emoji_id ?? "")}">${escapeHtml(value.alternative_text ?? "")}</tg-emoji>`;
   }
@@ -55,7 +59,11 @@ function richTextToHtml(value, depth = 0) {
   if (value.type === "anchor_link") return `<a href="#${escapeAttribute(value.anchor_name ?? "")}">${content}</a>`;
   if (value.type === "reference_link") return `<a href="#reference-${escapeAttribute(value.reference_name ?? "")}">${content}</a>`;
   if (value.type === "reference") return `<span>${content}</span>`;
-  if (value.type === "button") return richTextToHtml(value.button?.text, depth + 1);
+  if (value.type === "button") {
+    const label = richTextToHtml(value.button?.text, depth + 1);
+    const url = value.button?.url ?? value.button?.web_app?.url ?? value.button?.login_url?.url;
+    return url ? `<a href="${escapeAttribute(url)}">${label}</a>` : label;
+  }
   if (value.type === "anchor") return "";
   return content || escapeHtml(value.alternative_text ?? value.expression ?? "");
 }
@@ -66,6 +74,10 @@ function tagsForEntity(entity, text) {
   if (entity.type === "text_mention" && entity.user?.id) return [`<a href="tg://user?id=${entity.user.id}">`, "</a>"];
   if (entity.type === "custom_emoji" && entity.custom_emoji_id) return [`<tg-emoji emoji-id="${escapeAttribute(entity.custom_emoji_id)}">`, "</tg-emoji>"];
   const raw = text.slice(entity.offset, entity.offset + entity.length);
+  if (entity.type === "mention") {
+    const username = raw.replace(/^@/, "");
+    return /^[A-Za-z0-9_]{5,32}$/.test(username) ? [`<a href="https://t.me/${username}">`, "</a>"] : null;
+  }
   if (entity.type === "url") return [`<a href="${escapeAttribute(raw)}">`, "</a>"];
   if (entity.type === "email") return [`<a href="mailto:${escapeAttribute(raw)}">`, "</a>"];
   if (entity.type === "phone_number") return [`<a href="tel:${escapeAttribute(raw)}">`, "</a>"];
@@ -96,7 +108,7 @@ export function telegramEntitiesToHtml(text = "", entities = []) {
     html += escapeHtml(text.slice(point, points[index + 1]));
   }
   html += supported.filter((entity) => entity.end === text.length).sort((left, right) => right.offset - left.offset).map((entity) => entity.tags[1]).join("");
-  return html;
+  return html.replace(/\r\n|\r|\n/g, "<br>");
 }
 
 function filePayload(value, type, overrides = {}) {
@@ -147,7 +159,8 @@ function richMessageContent(richMessage) {
   function addButton(button) {
     const url = button?.url ?? button?.web_app?.url ?? button?.login_url?.url;
     const label = richTextToPlain(button?.text).trim();
-    if (url && label) buttons.push({ label, url });
+    const style = ["danger", "success", "primary", "link"].includes(button?.style) ? button.style : undefined;
+    if (url && label) buttons.push({ label, url, ...(style ? { style } : {}) });
   }
 
   function blocksToHtml(blocks, depth = 0) {
@@ -248,7 +261,8 @@ function richMessageContent(richMessage) {
 function messageButtons(message) {
   return (message.reply_markup?.inline_keyboard ?? []).flatMap((row) => row.flatMap((button) => {
     const url = button.url ?? button.web_app?.url ?? button.login_url?.url;
-    return url ? [{ label: button.text, url }] : [];
+    const style = ["danger", "success", "primary"].includes(button.style) ? button.style : undefined;
+    return url ? [{ label: button.text, url, ...(style ? { style } : {}) }] : [];
   }));
 }
 

@@ -1,4 +1,8 @@
-export type TelegramNewsButton = { label: string; url: string };
+export type TelegramNewsButton = {
+  label: string;
+  url: string;
+  style?: "danger" | "success" | "primary" | "link";
+};
 
 export type TelegramNewsMediaType =
   | "photo"

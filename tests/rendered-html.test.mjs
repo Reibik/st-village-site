@@ -336,7 +336,7 @@ test("signed bot updates mirror rich Telegram posts and proxy their media", asyn
     id: "9001",
     channel: "exitcloud_vpn",
     html: '<b>Важная новость</b><br><tg-spoiler>секрет</tg-spoiler>',
-    buttons: [{ label: "Открыть кабинет", url: "https://cabinet.stvillage.top/" }],
+    buttons: [{ label: "Открыть кабинет", url: "https://cabinet.stvillage.top/", style: "primary" }],
     media: [{
       type: "video", fileId: "BAACAgIAAxkBAAIBexample_file_id", fileUniqueId: "AgADexample_unique",
       mimeType: "video/mp4", fileName: "update.mp4", width: 1280, height: 720, duration: 12, hasSpoiler: false,
@@ -375,6 +375,7 @@ test("signed bot updates mirror rich Telegram posts and proxy their media", asyn
     assert.match(payload.posts[0].html, /class="tg-spoiler"/);
     assert.equal(payload.posts[0].attachments[0].type, "video");
     assert.equal(payload.posts[0].poll.totalVoterCount, 10);
+    assert.equal(payload.posts[0].buttons[0].style, "primary");
 
     const media = await worker.fetch(new Request(`http://localhost${payload.posts[0].attachments[0].url}`), env, context);
     assert.equal(media.status, 200);
@@ -386,9 +387,22 @@ test("signed bot updates mirror rich Telegram posts and proxy their media", asyn
 
   const botSync = await readFile(new URL("../integrations/telegram-news-bot/sync.mjs", import.meta.url), "utf8");
   const botFormatter = await import(new URL("../integrations/telegram-news-bot/telegram-format.mjs", import.meta.url));
+  const regularText = "Жирный Курсив Подчеркнут Зачеркнут Секрет Код\nЦитата\nБлок\nСсылка @support";
+  const regularEntity = (type, value, extra = {}) => ({ type, offset: regularText.indexOf(value), length: value.length, ...extra });
   const standalonePayload = botFormatter.telegramMessageToNewsPayload({
-    message_id: 77, date: 1788436800, text: "Новая публикация",
-    entities: [{ type: "bold", offset: 0, length: 5 }],
+    message_id: 77, date: 1788436800, caption: regularText,
+    caption_entities: [
+      regularEntity("bold", "Жирный"),
+      regularEntity("italic", "Курсив"),
+      regularEntity("underline", "Подчеркнут"),
+      regularEntity("strikethrough", "Зачеркнут"),
+      regularEntity("spoiler", "Секрет"),
+      regularEntity("code", "Код"),
+      regularEntity("blockquote", "Цитата"),
+      regularEntity("pre", "Блок"),
+      regularEntity("text_link", "Ссылка", { url: "https://stvillage.top/news" }),
+      regularEntity("mention", "@support"),
+    ],
     chat: { username: "exitcloud_vpn" },
     photo: [{ file_id: "photo-file-id", file_unique_id: "photo-unique-id", width: 640, height: 640 }],
   }, "exitcloud_vpn");
@@ -398,7 +412,13 @@ test("signed bot updates mirror rich Telegram posts and proxy their media", asyn
   assert.match(botSync, /deleteWebhook/);
   assert.match(botSync, /drop_pending_updates: false/);
   assert.match(botSync, /createHmac\("sha256"/);
-  assert.match(standalonePayload.html, /^<b>Новая<\/b>/);
+  assert.match(standalonePayload.html, /^<b>Жирный<\/b> <i>Курсив<\/i>/);
+  assert.match(standalonePayload.html, /<u>Подчеркнут<\/u>/);
+  assert.match(standalonePayload.html, /<s>Зачеркнут<\/s>/);
+  assert.match(standalonePayload.html, /<tg-spoiler>Секрет<\/tg-spoiler>/);
+  assert.match(standalonePayload.html, /<code>Код<\/code><br><blockquote>Цитата<\/blockquote><br><pre>Блок<\/pre><br>/);
+  assert.match(standalonePayload.html, /<a href="https:\/\/stvillage\.top\/news">Ссылка<\/a>/);
+  assert.match(standalonePayload.html, /<a href="https:\/\/t\.me\/support">@support<\/a>/);
   assert.equal(standalonePayload.media[0].type, "photo");
   assert.equal(standalonePayload.id, "77");
 
@@ -409,7 +429,7 @@ test("signed bot updates mirror rich Telegram posts and proxy their media", asyn
     rich_message: {
       blocks: [
         { type: "heading", size: 2, text: [{ type: "bold", text: "Большая новость" }] },
-        { type: "paragraph", text: ["Все возможности ", { type: "url", text: "кабинета", url: "https://cabinet.stvillage.top/" }] },
+        { type: "paragraph", text: ["Все возможности ", { type: "url", text: "кабинета", url: "https://cabinet.stvillage.top/" }, " — ", { type: "date_time", text: "сегодня", unix_time: 1788640815, date_time_format: "day_month" }] },
         { type: "list", items: [
           { label: "01", blocks: [{ type: "paragraph", text: "Быстро" }] },
           { label: "02", has_checkbox: true, is_checked: true, blocks: [{ type: "paragraph", text: "Надёжно" }] },
@@ -420,9 +440,11 @@ test("signed bot updates mirror rich Telegram posts and proxy their media", asyn
     },
   }, "exitcloud_vpn");
   assert.match(richPayload.html, /<h2><b>Большая новость<\/b><\/h2>/);
+  assert.match(richPayload.html, /<time datetime="[^"]+">сегодня<\/time>/);
   assert.match(richPayload.html, /<ul>.*Быстро.*Надёжно.*<\/ul>/);
   assert.equal(richPayload.media[0].type, "photo");
   assert.equal(richPayload.buttons[0].label, "Открыть кабинет");
+  assert.equal(richPayload.buttons[0].style, "primary");
   assert.match(exampleEnv, /TELEGRAM_NEWS_BOT_TOKEN=/);
   assert.match(exampleEnv, /SITE_NEWS_ACTOR_ID=/);
 });

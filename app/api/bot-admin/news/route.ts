@@ -34,7 +34,9 @@ function parseButtons(value: unknown): TelegramNewsButton[] | null {
     const record = item && typeof item === "object" ? item as Record<string, unknown> : {};
     const label = String(record.label || "").trim().slice(0, 80);
     const url = safeUrl(record.url);
-    return label && url ? { label, url } : null;
+    const rawStyle = String(record.style || "");
+    const style = ["danger", "success", "primary", "link"].includes(rawStyle) ? rawStyle as TelegramNewsButton["style"] : undefined;
+    return label && url ? { label, url, ...(style ? { style } : {}) } : null;
   });
   return buttons.every(Boolean) ? buttons as TelegramNewsButton[] : null;
 }

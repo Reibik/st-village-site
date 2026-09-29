@@ -40,6 +40,7 @@ test("server-renders the ST VILLAGE public home page", async () => {
 
   const html = await response.text();
   assert.match(html, /<html lang="ru"/i);
+  assert.match(html, /<script\b(?=[^>]*\bsrc="https:\/\/code\.jivo\.ru\/widget\/XE01HgWxWf")(?=[^>]*\basync)[^>]*>/);
   assert.match(html, /ST VILLAGE/);
   assert.match(html, /Стабильное подключение/);
   assert.match(html, /Открыть личный кабинет/);
@@ -90,6 +91,7 @@ test("all public pages render their expected content", async () => {
     assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i, path);
     const html = await response.text();
     assert.match(html, new RegExp(`<h1[^>]*>${heading}</h1>`), path);
+    assert.equal((html.match(/<script\b[^>]*\bsrc="https:\/\/code\.jivo\.ru\/widget\/XE01HgWxWf"/g) ?? []).length, 1, `One Jivo widget on ${path}`);
     if (path === "/connect") {
       assert.match(html, />Happ</);
       assert.match(html, />INCY</);
@@ -248,7 +250,9 @@ test("Telegram news integration uses the public channel without exposing credent
   assert.match(feed, /mergePosts/);
   assert.match(card, /dangerouslySetInnerHTML/);
   assert.match(caddy, /img-src[^\n]+https:\/\/\*\.telesco\.pe/);
-  assert.doesNotMatch(caddy, /script-src[^;\n]+telegram\.org|frame-src/);
+  assert.doesNotMatch(caddy, /(?:script-src|frame-src)[^;\n]+(?:telegram\.org|t\.me)/);
+  assert.match(caddy, /script-src[^;\n]+https:\/\/code\.jivo\.ru/);
+  assert.match(caddy, /connect-src[^;\n]+wss:\/\/\*\.jivosite\.com/);
   assert.doesNotMatch(`${route}${channel}${feed}${card}`, /BOT_TOKEN|Authorization:|api\.telegram\.org/);
 });
 

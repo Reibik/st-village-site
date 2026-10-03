@@ -59,6 +59,16 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .main-nav { display: flex; align-items: center; gap: 26px; margin-left: 20px; }
 .main-nav a { color: var(--muted); font-size: 14px; font-weight: 560; transition: color .2s; }
 .main-nav a:hover, .main-nav a:focus-visible { color: var(--foreground); }
+.coupons-nav-disabled { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 14px; font-weight: 560; cursor: not-allowed; white-space: nowrap; }
+.coming-soon-badge { display: inline-flex; align-items: center; padding: 3px 6px; border: 1px solid var(--line); border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 9px; font-weight: 700; line-height: 1.2; letter-spacing: .02em; }
+.footer-col .coupons-nav-disabled { padding: 5px 0; font-size: 12px; }
+.mobile-nav .coupons-nav-disabled { padding: 12px; }
+.coupons-coming-soon-card { display: flex; align-items: center; gap: 24px; padding: clamp(24px,5vw,48px); border: 1px solid var(--line); border-radius: 24px; background: var(--surface); }
+.coupons-coming-soon-card h2 { margin: 14px 0 10px; font-size: clamp(24px,4vw,34px); }
+.coupons-coming-soon-card p { margin: 0; color: var(--muted); }
+.coupons-coming-soon-card .button { margin-left: auto; flex-shrink: 0; }
+.coupons-coming-soon-symbol { display: grid; place-items: center; flex-shrink: 0; width: 70px; height: 70px; border-radius: 20px; color: var(--accent); background: var(--accent-soft); font-size: 40px; }
+@media (max-width: 680px) { .coupons-coming-soon-card { flex-direction: column; align-items: flex-start; }.coupons-coming-soon-card .button { margin-left: 0; } }
 .nav-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 .theme-toggle, .menu-toggle { width: 42px; height: 42px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--foreground); cursor: pointer; display: grid; place-items: center; }
 .menu-toggle { display: none; }

@@ -50,7 +50,10 @@ test("server-renders the ST VILLAGE public home page", async () => {
   assert.match(html, /Попробовать 1 день/);
   assert.match(html, /5 ГБ/);
   assert.match(html, /Белые списки — только на платных тарифах/);
-  assert.match(html, /href="\/coupons"/);
+  assert.doesNotMatch(html, /href="\/coupons"/);
+  assert.match(html, /aria-disabled="true"[^>]*>Купоны/);
+  assert.match(html, /class="coming-soon-badge">Скоро<\/span>/);
+  assert.doesNotMatch(html, /coupon-home-section|start=coupon_/);
   assert.match(html, /<source srcSet="\/brand-emblem\.avif" type="image\/avif"/);
   assert.match(html, /<source srcSet="\/brand-emblem\.webp" type="image\/webp"/);
   assert.match(html, /src="\/brand-emblem\.png"/);
@@ -76,7 +79,7 @@ test("home infrastructure is presented as a live network", async () => {
 test("all public pages render their expected content", async () => {
   const pages = [
     ["/pricing", "Выберите удобный тариф"],
-    ["/coupons", "Купонный дроп ST VILLAGE"],
+    ["/coupons", "Купоны — скоро"],
     ["/connect", "Happ и INCY — два основных приложения"],
     ["/status", "Состояние инфраструктуры"],
     ["/news", "Новости ST VILLAGE"],
@@ -111,21 +114,27 @@ test("all public pages render their expected content", async () => {
   }
 });
 
-test("coupon drop exposes only the current scheduled gift", async () => {
+test("closed coupon API never exposes a coupon or schedule", async () => {
   const response = await worker.fetch(new Request("http://localhost/api/coupons/current"), env, context);
-  assert.equal(response.status, 200);
+  assert.equal(response.status, 503);
   assert.match(response.headers.get("cache-control") ?? "", /no-store/i);
   const payload = await response.json();
-  assert.match(payload.status, /^(active|upcoming|ended)$/);
-  assert.equal(payload.totalDrops, 5);
-  assert.equal(typeof payload.dropNumber, "number");
-  assert.equal(payload.botUrl, "https://t.me/st_village_vpn_bot");
-  if (payload.status === "active") {
-    assert.match(payload.couponUrl, /^https:\/\/t\.me\/st_village_vpn_bot\?start=coupon_[a-z0-9]+$/i);
-  } else {
-    assert.equal(payload.couponUrl, null);
-  }
-  assert.equal((JSON.stringify(payload).match(/coupon_[a-z0-9]+/gi) ?? []).length <= 1, true);
+  assert.deepEqual(payload, { status: "coming_soon", error: "coupons_unavailable" });
+});
+
+test("direct coupon page shows only a noindex coming-soon notice", async () => {
+  const response = await worker.fetch(new Request("http://localhost/coupons", { headers: { accept: "text/html" } }), env, context);
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.match(html, /Купоны — скоро/);
+  assert.match(html, /<meta name="robots" content="noindex, nofollow"/);
+  assert.doesNotMatch(html, /coupon-countdown|coupon-ticket|start=coupon_|Пять подарков/);
+});
+
+test("closed coupons are not advertised in the public sitemap", async () => {
+  const response = await worker.fetch(new Request("http://localhost/sitemap.xml"), env, context);
+  assert.equal(response.status, 200);
+  assert.doesNotMatch(await response.text(), /\/coupons/);
 });
 
 test("system routes, redirect and not-found responses are valid", async () => {

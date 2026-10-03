@@ -1,10 +1,10 @@
-import { getCouponDropSnapshot } from "@/src/server/coupons/schedule";
-
 export async function GET() {
-  return Response.json(getCouponDropSnapshot(), {
+  return Response.json({ status: "coming_soon", error: "coupons_unavailable" }, {
+    status: 503,
     headers: {
       "Cache-Control": "no-store, no-cache, must-revalidate",
       Pragma: "no-cache",
+      "X-Robots-Tag": "noindex, nofollow",
     },
   });
 }

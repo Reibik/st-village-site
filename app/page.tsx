@@ -6,12 +6,10 @@ import { SectionHeading } from "@/src/components/section-heading";
 import { PlatformStrip } from "@/src/components/platform-strip";
 import { TelegramNewsFeed } from "@/src/features/news/telegram-news-feed";
 import { PricingCatalog } from "@/src/features/pricing/pricing-catalog";
-import { CouponDrop } from "@/src/features/coupons/coupon-drop";
 import { HomeNetworkShowcase } from "@/src/features/status/home-network-showcase";
 import { homeFaqs } from "@/src/config/content";
 import { CABINET_URL, TELEGRAM_BOT_URL } from "@/src/config/links";
 import { createFaqJsonLd, serializeJsonLd } from "@/src/config/structured-data";
-import { getCouponDropSnapshot } from "@/src/server/coupons/schedule";
 import "./orbital-home.css";
 
 const steps = [
@@ -23,7 +21,6 @@ const steps = [
 const faqJsonLd = createFaqJsonLd(homeFaqs);
 
 export default function Home() {
-  const couponSnapshot = getCouponDropSnapshot();
   return <div className="orbital-home">
     <section className="hero section-shell" aria-labelledby="hero-title">
       <div className="hero-copy">
@@ -102,7 +99,6 @@ export default function Home() {
       <div className="orbit-trial-note"><span className="orbit-trial-note-icon" aria-hidden="true">↗</span><div><strong>Сначала попробуйте. Потом решите.</strong><p>Пробный период: 1 день, 5 ГБ и 1 устройство. Германия, Польша и Швеция. Белые списки — только на платных тарифах.</p></div><a className="text-link" href={CABINET_URL} target="_blank" rel="noreferrer">Получить доступ <span aria-hidden="true">↗</span></a></div>
     </section>
 
-    {couponSnapshot.status !== "ended" && <section className="section-shell coupon-home-section" aria-label="Купонная раздача ST VILLAGE"><CouponDrop initialSnapshot={couponSnapshot} compact /></section>}
     <HomeNetworkShowcase />
 
     <section className="section-shell section-block home-news-section" id="news">

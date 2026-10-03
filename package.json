@@ -1,6 +1,6 @@
 {
   "name": "st-village",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "private": true,
   "packageManager": "pnpm@11.9.0",
   "engines": {
@@ -10,7 +10,7 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "vinext start",
-    "test": "pnpm build && node --test tests/rendered-html.test.mjs && node --experimental-strip-types --test tests/landing-data.test.mjs tests/telegram-link.test.mjs",
+    "test": "pnpm build && node --test tests/rendered-html.test.mjs && node --experimental-strip-types --test tests/landing-data.test.mjs tests/telegram-link.test.mjs tests/request-body.test.mjs",
     "test:links": "node scripts/check-client-links.mjs",
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",

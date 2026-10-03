@@ -45,6 +45,37 @@ export function rateLimitResponse(retryAfterSeconds: number) {
   });
 }
 
+export async function readTextLimited(request: Request, maximumBytes = 16_384): Promise<string | Response> {
+  const tooLarge = () => Response.json({ error: "payload too large" }, {
+    status: 413, headers: { "Cache-Control": "no-store" },
+  });
+  if (Number(request.headers.get("content-length") || 0) > maximumBytes) {
+    await request.body?.cancel();
+    return tooLarge();
+  }
+  if (!request.body) return "";
+  const reader = request.body.getReader();
+  const decoder = new TextDecoder();
+  const parts: string[] = [];
+  let bytes = 0;
+  try {
+    while (true) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      bytes += chunk.value.byteLength;
+      if (bytes > maximumBytes) {
+        await reader.cancel();
+        return tooLarge();
+      }
+      parts.push(decoder.decode(chunk.value, { stream: true }));
+    }
+    parts.push(decoder.decode());
+    return parts.join("");
+  } finally {
+    reader.releaseLock();
+  }
+}
+
 export async function readJsonLimited(request: Request, maximumBytes = 16_384) {
   const declaredLength = Number(request.headers.get("content-length") || 0);
   if (declaredLength > maximumBytes) throw new Error("payload too large");

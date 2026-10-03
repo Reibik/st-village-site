@@ -93,4 +93,7 @@ fi
 
 printf '%s\n' "$target_sha" > "${app_root}/current-sha"
 chmod 644 "${app_root}/current-sha"
+if systemctl cat st-village-news-bot.service >/dev/null 2>&1; then
+  systemctl restart st-village-news-bot.service
+fi
 git -C "$repository" worktree prune

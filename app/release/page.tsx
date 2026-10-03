@@ -8,20 +8,20 @@ import { createPageMetadata } from "@/src/config/seo";
 
 export const metadata: Metadata = createPageMetadata({
   title: `Релиз v${SITE_RELEASE.version}`,
-  description: "ST VILLAGE v1.2.0 — живой мониторинг серверов, отзывы с модерацией, улучшенная защита и автоматический контроль качества.",
+  description: "ST VILLAGE v1.3.0 «Фирменная орбита» — новая главная, удобное подключение, улучшенные новости и достоверный мониторинг.",
   path: "/release",
 });
 
 const releaseHighlights = [
   {
     index: "01",
-    title: "Статус в реальном времени",
-    text: "Состояние серверов, задержка, аптайм за 30 дней и активные инциденты собраны на одной понятной странице.",
+    title: "Фирменная орбита",
+    text: "Новый первый экран с мягкой анимацией, заметным пробным доступом и понятным переходом в личный кабинет.",
   },
   {
     index: "02",
-    title: "Обратная связь под контролем",
-    text: "Отзывы проходят ручную модерацию, а администратор получает уведомление о каждой новой публикации в Telegram.",
+    title: "Информация без лишнего",
+    text: "Три шага подключения, два анонса новостей и мониторинг, который честно показывает инциденты и устаревшие данные.",
   },
   {
     index: "03",
@@ -34,16 +34,16 @@ export default function ReleasePage() {
   return <>
     <PageHero
       eyebrow={`Стабильный канал · v${SITE_RELEASE.version}`}
-      title="Живой мониторинг и надёжная эксплуатация"
-      text="Версия 1.2.0 делает состояние серверов прозрачным для клиентов, улучшает обратную связь и усиливает автоматический контроль качества."
+      title="Фирменная орбита — новый облик ST VILLAGE"
+      text="Версия 1.3.0 делает главную выразительнее и удобнее: от пробного доступа и подключения до новостей, мониторинга и поддержки."
     />
 
     <section className="section-shell page-content release-page" aria-labelledby="release-highlights-title">
       <div className="release-banner glass-card">
         <div>
           <div className="eyebrow">{SITE_RELEASE.name}</div>
-          <h2 id="release-highlights-title">Мониторинг и качество</h2>
-          <p>Выпущен <time dateTime={SITE_RELEASE.releasedAt}>9 августа 2026 года</time>. Обновление объединяет живой статус серверов, отзывы с модерацией и усиленную предрелизную проверку.</p>
+          <h2 id="release-highlights-title">{SITE_RELEASE.name}</h2>
+          <p>Выпущен <time dateTime={SITE_RELEASE.releasedAt}>3 октября 2026 года</time>. Новый дизайн, улучшенные новости и мониторинг уже доступны. Раздел купонов пока закрыт и отмечен бейджем «Скоро».</p>
         </div>
         <span className="release-badge" aria-label={`Версия ${SITE_RELEASE.version}`}>v{SITE_RELEASE.version}</span>
       </div>

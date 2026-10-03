@@ -35,7 +35,7 @@ test("server-renders the ST VILLAGE public home page", async () => {
   const response = await worker.fetch(new Request("http://localhost/", { headers: { accept: "text/html" } }), env, context);
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
-  assert.equal(response.headers.get("x-st-village-release"), "1.2.0");
+  assert.equal(response.headers.get("x-st-village-release"), "1.3.0");
   assert.equal(response.headers.get("x-st-village-channel"), "stable");
 
   const html = await response.text();
@@ -45,7 +45,7 @@ test("server-renders the ST VILLAGE public home page", async () => {
   assert.match(html, /Открыть личный кабинет/);
   assert.match(html, /https:\/\/cabinet\.stvillage\.top/);
   assert.match(html, /https:\/\/t\.me\/st_village_vpn_bot/);
-  assert.match(html, /class="footer-version"[^>]*>v(?:<!-- -->)?1\.2\.0<\/a>/);
+  assert.match(html, /class="footer-version"[^>]*>v(?:<!-- -->)?1\.3\.0<\/a>/);
   assert.match(html, /href="\/release"/);
   assert.match(html, /Попробовать 1 день/);
   assert.match(html, /5 ГБ/);
@@ -85,7 +85,7 @@ test("all public pages render their expected content", async () => {
     ["/news", "Новости ST VILLAGE"],
     ["/reviews", "Честная обратная связь"],
     ["/support", "Помощь, когда она нужна"],
-    ["/release", "Живой мониторинг и надёжная эксплуатация"],
+    ["/release", "Фирменная орбита — новый облик ST VILLAGE"],
     ["/legal/privacy", "Политика конфиденциальности 🚀ST VILLAGE🚀"],
     ["/legal/terms", "Публичная оферта сервиса 🚀ST VILLAGE🚀"],
   ];
@@ -95,6 +95,7 @@ test("all public pages render their expected content", async () => {
     assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i, path);
     const html = await response.text();
     assert.match(html, new RegExp(`<h1[^>]*>${heading}</h1>`), path);
+    assert.equal((html.match(/<script\b[^>]*\bsrc="https:\/\/code\.jivo\.ru\/widget\/XE01HgWxWf"/g) ?? []).length, 1, `One Jivo widget on ${path}`);
     if (path === "/connect") {
       assert.match(html, />Happ</);
       assert.match(html, />INCY</);
@@ -167,14 +168,45 @@ test("version endpoint detects a newer deployment without being cached", async (
   const currentPayload = await current.json();
   assert.equal(typeof currentPayload.version, "string");
   assert.equal(currentPayload.version.length > 0, true);
-  assert.equal(currentPayload.release, "1.2.0");
+  assert.equal(currentPayload.release, "1.3.0");
   assert.equal(currentPayload.channel, "stable");
-  assert.equal(currentPayload.releaseName, "Мониторинг и качество");
+  assert.equal(currentPayload.releaseName, "Фирменная орбита");
   assert.equal(currentPayload.updateAvailable, false);
 
   const stale = await worker.fetch(new Request("http://localhost/api/version?current=previous-build"), env, context);
   assert.equal(stale.status, 200);
   assert.equal((await stale.json()).updateAvailable, true);
+});
+
+test("signed-admin APIs reject oversized streams before consuming the whole body", async () => {
+  for (const [path, maximumBytes] of [
+    ["/api/bot-admin/announcements", 16_384],
+    ["/api/bot-admin/incidents", 16_384],
+    ["/api/bot-admin/news", 1_000_000],
+  ]) {
+    let pulled = 0;
+    const stream = new ReadableStream({
+      pull(controller) {
+        pulled += 1;
+        controller.enqueue(new Uint8Array(Math.floor(maximumBytes / 2) + 1));
+        if (pulled === 3) controller.close();
+      },
+    }, { highWaterMark: 0 });
+    const response = await worker.fetch(new Request(`http://localhost${path}`, {
+      method: "POST", body: stream, duplex: "half",
+    }), env, context);
+    assert.equal(response.status, 413, path);
+    assert.match(response.headers.get("cache-control") ?? "", /no-store/i);
+
+    const declaredOversize = await worker.fetch(new Request(`http://localhost${path}`, {
+      method: "POST", body: "{}", headers: { "content-length": String(maximumBytes + 1) },
+    }), env, context);
+    assert.equal(declaredOversize.status, 413, `${path} must reject an oversized declared length`);
+    const atLimit = await worker.fetch(new Request(`http://localhost${path}`, {
+      method: "POST", body: "x".repeat(maximumBytes),
+    }), env, context);
+    assert.equal(atLimit.status, 401, `${path} must allow the exact byte limit through to authentication`);
+  }
 });
 
 test("website bot API requires signed admin requests and publishes announcements", async () => {
@@ -189,7 +221,15 @@ test("website bot API requires signed admin requests and publishes announcements
     placement: "all", state: "published", dismissible: true, startsAt: new Date(Date.now() - 1000).toISOString(),
   };
   const body = JSON.stringify(payload);
-  const create = await worker.fetch(await signedBotRequest("/api/bot-admin/announcements", { method: "POST", body }), env, context);
+  const signedRequest = await signedBotRequest("/api/bot-admin/announcements", { method: "POST", body });
+  const utf8 = new TextEncoder().encode(body);
+  const split = utf8.findIndex((byte) => byte >= 0xc0) + 1;
+  const stream = new ReadableStream({ start(controller) {
+    controller.enqueue(utf8.subarray(0, split));
+    controller.enqueue(utf8.subarray(split));
+    controller.close();
+  } });
+  const create = await worker.fetch(new Request(signedRequest, { body: stream, duplex: "half" }), env, context);
   assert.equal([200, 503].includes(create.status), true);
   const created = await create.json();
   assert.equal(created.announcement.title, payload.title);
@@ -307,7 +347,9 @@ test("Telegram news integration uses the public channel without exposing credent
   assert.match(feed, /mergePosts/);
   assert.match(card, /dangerouslySetInnerHTML/);
   assert.match(caddy, /img-src[^\n]+https:\/\/\*\.telesco\.pe/);
-  assert.doesNotMatch(caddy, /script-src[^;\n]+telegram\.org|frame-src/);
+  assert.doesNotMatch(caddy, /(?:script-src|frame-src)[^;\n]+(?:telegram\.org|t\.me)/);
+  assert.match(caddy, /script-src[^;\n]+https:\/\/code\.jivo\.ru/);
+  assert.match(caddy, /connect-src[^;\n]+wss:\/\/\*\.jivosite\.com/);
   assert.doesNotMatch(`${route}${channel}${feed}${card}`, /BOT_TOKEN|Authorization:|api\.telegram\.org/);
 });
 
@@ -763,7 +805,7 @@ test("accessibility and performance safeguards cover the new public surfaces", a
   assert.match(packageJson.scripts["release:check"], /test:performance/);
 });
 
-test("v1.2.0 operational release safeguards are present", async () => {
+test("v1.3.0 operational release safeguards are present", async () => {
   const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
   const workflow = await readFile(new URL("../.github/workflows/quality.yml", import.meta.url), "utf8");
   const caddy = await readFile(new URL("../ops/vps/Caddyfile", import.meta.url), "utf8");
@@ -774,7 +816,7 @@ test("v1.2.0 operational release safeguards are present", async () => {
   const releasePage = await readFile(new URL("../app/release/page.tsx", import.meta.url), "utf8");
   const worker = await readFile(new URL("../worker/index.ts", import.meta.url), "utf8");
 
-  assert.equal(packageJson.version, "1.2.0");
+  assert.equal(packageJson.version, "1.3.0");
   assert.match(packageJson.scripts.typecheck, /tsc --noEmit/);
   assert.match(packageJson.scripts["release:check"], /lint.*typecheck.*test:performance.*pnpm test/s);
   assert.match(packageJson.scripts.test, /build.*rendered-html.*landing-data.*telegram-link/s);
@@ -789,8 +831,8 @@ test("v1.2.0 operational release safeguards are present", async () => {
   assert.match(security, /Contact: mailto:admin@stvillage\.ru/);
   assert.match(security, /Canonical: https:\/\/stvillage\.top\/\.well-known\/security\.txt/);
   assert.match(releaseConfig, /channel: "stable"/);
-  assert.match(releaseConfig, /name: "Мониторинг и качество"/);
-  assert.match(releasePage, /Живой мониторинг и надёжная эксплуатация/);
+  assert.match(releaseConfig, /name: "Фирменная орбита"/);
+  assert.match(releasePage, /Фирменная орбита — новый облик ST VILLAGE/);
   assert.match(worker, /X-ST-Village-Release/);
   assert.match(worker, /X-ST-Village-Channel/);
   assert.match(changelog, /1\.0\.0 — стабильный запуск/);

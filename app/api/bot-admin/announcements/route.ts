@@ -1,4 +1,4 @@
-import { checkRateLimit, rateLimitResponse } from "@/src/server/security/rate-limit";
+import { checkRateLimit, rateLimitResponse, readTextLimited } from "@/src/server/security/rate-limit";
 import { siteBotUnauthorizedResponse, verifySiteBotRequest } from "@/src/server/security/site-bot-auth";
 import { getSiteAnnouncements, recordSiteAdminAudit, saveSiteAnnouncement, type SiteAnnouncement } from "@/src/server/storage/database";
 
@@ -26,7 +26,8 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const rateLimit = await checkRateLimit(request, "site-bot-announcements", 30, 15 * 60_000);
   if (!rateLimit.allowed) return rateLimitResponse(rateLimit.retryAfterSeconds);
-  const body = await request.text();
+  const body = await readTextLimited(request);
+  if (body instanceof Response) return body;
   const actor = await verifySiteBotRequest(request, body);
   if (!actor) return siteBotUnauthorizedResponse();
   try {

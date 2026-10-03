@@ -71,7 +71,7 @@ async function prepare(page: Page) {
     return route.fulfill({ json: { incidents: [] } });
   });
   await page.route("**/api/version", (route) => route.fulfill({
-    json: { version: "1.2.0", channel: "stable" },
+    json: { version: "1.3.0", channel: "stable", updateAvailable: false },
   }));
 }
 

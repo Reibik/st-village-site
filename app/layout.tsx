@@ -63,6 +63,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <SiteFooter />
         <UpdateNotice />
         <SiteObservability />
+        <script src="https://code.jivo.ru/widget/XE01HgWxWf" async />
       </body>
     </html>
   );

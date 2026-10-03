@@ -15,7 +15,7 @@ async function prepare(page: Page) {
     { id: 2, name: "Семейный", description: "Для ваших устройств", trafficLimitGb: 1000, deviceLimit: 9, periods: [{ days: 30, label: "1 месяц", priceKopeks: 30000, originalPriceKopeks: null, discountPercent: null }] },
     { id: 3, name: "Безлимитный", description: "Без ограничений трафика", trafficLimitGb: 0, deviceLimit: 5, periods: [{ days: 30, label: "1 месяц", priceKopeks: 45000, originalPriceKopeks: null, discountPercent: null }] },
   ] } }));
-  await page.route("**/api/version", (route) => route.fulfill({ json: { version: "1.2.0", updateAvailable: false } }));
+  await page.route("**/api/version", (route) => route.fulfill({ json: { version: "1.3.0", updateAvailable: false } }));
 }
 
 test("главная: реальные страны, две новости и выбор периода", async ({ page }) => {

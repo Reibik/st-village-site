@@ -1,5 +1,5 @@
 import { TELEGRAM_NEWS_CHANNEL, TELEGRAM_NEWS_URL } from "@/src/config/links";
-import { checkRateLimit, rateLimitResponse } from "@/src/server/security/rate-limit";
+import { checkRateLimit, rateLimitResponse, readTextLimited } from "@/src/server/security/rate-limit";
 import { siteBotUnauthorizedResponse, verifySiteBotRequest } from "@/src/server/security/site-bot-auth";
 import { recordSiteAdminAudit, saveStoredTelegramNewsPost } from "@/src/server/storage/database";
 import { sanitizeTelegramHtml } from "@/src/server/telegram/channel";
@@ -89,8 +89,8 @@ function parsePoll(value: unknown): TelegramNewsPoll | null | false {
 export async function POST(request: Request) {
   const rateLimit = await checkRateLimit(request, "site-bot-news", 120, 15 * 60_000);
   if (!rateLimit.allowed) return rateLimitResponse(rateLimit.retryAfterSeconds);
-  const body = await request.text();
-  if (new TextEncoder().encode(body).byteLength > MAX_BODY_BYTES) return Response.json({ error: "payload too large" }, { status: 413 });
+  const body = await readTextLimited(request, MAX_BODY_BYTES);
+  if (body instanceof Response) return body;
   const actor = await verifySiteBotRequest(request, body);
   if (!actor) return siteBotUnauthorizedResponse();
 

@@ -5,6 +5,7 @@ import { CountryFlag } from "@/src/components/country-flag";
 import { STATUS_PAGE_URL } from "@/src/config/links";
 import type { LiveStatusSummary } from "@/src/server/status/live-types";
 import type { MonitorStatus } from "@/src/server/status/types";
+import { cleanServerName, isAutomaticRoute, isLiveStatusStale } from "./network-catalog";
 
 const labels: Record<MonitorStatus, string> = {
   operational: "Все системы работают",
@@ -37,11 +38,13 @@ export function LiveServerStatus() {
   const [summary, setSummary] = useState<LiveStatusSummary | null>(null);
   const [error, setError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [now, setNow] = useState(0);
 
   const load = useCallback(async (manual = false) => {
+    setNow(Date.now());
     if (manual) setRefreshing(true);
     try {
-      const response = await fetch("/api/live-status", { cache: "no-store" });
+      const response = await fetch("/api/live-status", { cache: "no-store", signal: AbortSignal.timeout(10_000) });
       if (!response.ok) throw new Error("live status request failed");
       setSummary(await response.json() as LiveStatusSummary);
       setError(false);
@@ -68,21 +71,22 @@ export function LiveServerStatus() {
 
   const rank = (status: MonitorStatus) => status === "outage" ? 0 : status === "maintenance" ? 1 : 2;
   const sortedServers = [...summary.servers].sort((left, right) => rank(left.status) - rank(right.status));
+  const stale = error || isLiveStatusStale(summary, now);
 
   return <section className="live-status-shell" aria-labelledby="live-status-title">
-    <div className={`live-status-hero live-status-${summary.status}`}>
+    <div className={`live-status-hero live-status-${stale ? "unknown" : summary.status}`}>
       <div className="live-status-hero-copy">
         <span className="live-status-kicker"><span className="live-pulse" /> Данные в реальном времени</span>
         <h2 id="live-status-title">Серверы ST VILLAGE</h2>
-        <StatusPill status={summary.status} />
+        <StatusPill status={stale ? "unknown" : summary.status} />
       </div>
       <div className="live-status-hero-meta"><small>Последняя проверка</small><strong>{formatTime(summary.generatedAt)}</strong><button type="button" onClick={() => void load(true)} disabled={refreshing}>{refreshing ? "Обновляем…" : "Обновить данные"}</button></div>
     </div>
 
-    {error && <div className="notice status-warning" role="alert"><span>ⓘ</span><div><strong>Автообновление не удалось</strong>Показываем последнюю успешно полученную сводку.</div></div>}
+    {stale && <div className="notice status-warning" role="alert"><span>ⓘ</span><div><strong>Данные требуют обновления</strong>Показываем последнюю успешно полученную сводку, а не текущую доступность.</div></div>}
 
     <div className="live-status-metrics" aria-label="Сводка статуса серверов">
-      <article><small>Серверы в сети</small><strong>{summary.totals.online}<span> / {summary.totals.total}</span></strong><i>Текущая доступность</i></article>
+      <article><small>Серверы в сети</small><strong>{summary.totals.online}<span> / {summary.totals.total}</span></strong><i>{stale ? "Последняя полученная сводка" : "Текущая доступность"}</i></article>
       <article><small>Аптайм за 30 дней</small><strong>{metric(summary.totals.uptime30, "%")}</strong><i>По данным мониторинга</i></article>
       <article><small>Средняя задержка</small><strong>{metric(summary.totals.averageLatencyMs, " мс")}</strong><i>По всем узлам</i></article>
       <article><small>Обновление</small><strong>{summary.refreshAfterSeconds}<span> сек</span></strong><i>Автоматически</i></article>
@@ -98,9 +102,9 @@ export function LiveServerStatus() {
 
     <div className="live-status-heading"><div><span className="eyebrow">Локации</span><h3>Состояние каждого узла</h3></div><p>Недоступные серверы и технические работы всегда показываются первыми.</p></div>
     <div className="live-server-grid">
-      {sortedServers.map((server) => <article className={`live-server-card live-server-${server.status}`} key={server.id}>
-        <div className="live-server-main"><CountryFlag code={server.countryCode} /><div><strong>{server.name}</strong>{server.members > 1 && <small>{server.membersOnline} из {server.members} узлов в сети</small>}</div></div>
-        <StatusPill status={server.status} />
+      {sortedServers.map((server) => <article className={`live-server-card live-server-${stale ? "unknown" : server.status}`} key={server.id}>
+        <div className="live-server-main"><CountryFlag code={isAutomaticRoute(server.name) ? "" : server.countryCode} /><div><strong>{cleanServerName(server.name)}</strong>{server.members > 1 && <small>{server.membersOnline} из {server.members} узлов в сети</small>}</div></div>
+        <StatusPill status={stale ? "unknown" : server.status} />
         <div className="live-server-values"><span><small>Задержка</small><b>{metric(server.latencyMs, " мс")}</b></span><span><small>Аптайм 30 дней</small><b>{metric(server.uptime30, "%")}</b></span></div>
       </article>)}
     </div>

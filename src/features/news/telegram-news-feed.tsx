@@ -1,18 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { TELEGRAM_NEWS_URL } from "@/src/config/links";
 import type { TelegramPost } from "@/src/server/telegram/types";
 import { TelegramPostCard } from "./telegram-post-card";
+import { TelegramNewsTeaser } from "./telegram-news-teaser";
+import { mergePosts } from "./merge-posts";
 interface TelegramNewsPayload { channel: string; posts: TelegramPost[]; nextBefore: string | null; hasMore: boolean }
 interface TelegramNewsFeedProps { limit?: number; compact?: boolean }
 
 const REFRESH_INTERVAL_MS = 180_000;
-
-function mergePosts(first: TelegramPost[], second: TelegramPost[]) {
-  return [...new Map([...first, ...second].map((post) => [post.id, post])).values()]
-    .sort((left, right) => Number(right.id) - Number(left.id));
-}
 
 export function TelegramNewsFeed({ limit = 8, compact = false }: TelegramNewsFeedProps) {
   const [posts, setPosts] = useState<TelegramPost[]>([]);
@@ -22,6 +19,18 @@ export function TelegramNewsFeed({ limit = 8, compact = false }: TelegramNewsFee
   const [loadMoreError, setLoadMoreError] = useState(false);
   const [nextBefore, setNextBefore] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
+  const handledFragment = useRef("");
+
+  useEffect(() => {
+    if (compact) return;
+    const fragment = window.location.hash.slice(1);
+    if (!/^post-\d+$/.test(fragment) || handledFragment.current === fragment) return;
+    const target = document.getElementById(fragment);
+    if (!target) return;
+    handledFragment.current = fragment;
+    target.scrollIntoView({ block: "start", behavior: "instant" });
+    target.focus({ preventScroll: true });
+  }, [posts, compact]);
 
   const refresh = useCallback(async (quiet = false) => {
     if (!quiet) setLoading(true);
@@ -30,7 +39,7 @@ export function TelegramNewsFeed({ limit = 8, compact = false }: TelegramNewsFee
       if (!response.ok) throw new Error("News feed is unavailable");
       const payload = (await response.json()) as TelegramNewsPayload;
       if (!Array.isArray(payload.posts)) throw new Error("Invalid news response");
-      setPosts((current) => quiet ? mergePosts(payload.posts, current) : payload.posts);
+      setPosts((current) => mergePosts(payload.posts, quiet ? current : [], compact ? limit : undefined));
       if (!quiet) {
         setNextBefore(payload.nextBefore);
         setHasMore(payload.hasMore);
@@ -41,7 +50,7 @@ export function TelegramNewsFeed({ limit = 8, compact = false }: TelegramNewsFee
     } finally {
       setLoading(false);
     }
-  }, [limit]);
+  }, [limit, compact]);
 
   const loadMore = useCallback(async () => {
     if (!nextBefore || loadingMore) return;
@@ -87,7 +96,7 @@ export function TelegramNewsFeed({ limit = 8, compact = false }: TelegramNewsFee
   return (
     <>
       <div className={`telegram-feed-grid${compact ? " telegram-feed-compact" : ""}`}>
-        {posts.map((post) => <TelegramPostCard post={post} key={post.id} />)}
+        {posts.map((post) => compact ? <TelegramNewsTeaser post={post} key={post.id} /> : <TelegramPostCard post={post} key={post.id} />)}
       </div>
       {!compact && hasMore && <div className="telegram-feed-more">
         <button className="button button-secondary" type="button" onClick={() => void loadMore()} disabled={loadingMore} aria-busy={loadingMore}>

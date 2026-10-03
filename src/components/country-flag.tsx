@@ -1,4 +1,5 @@
 const countryLabels: Record<string, string> = {
+  AL: "Албания",
   CH: "Швейцария",
   DE: "Германия",
   FI: "Финляндия",
@@ -8,6 +9,10 @@ const countryLabels: Record<string, string> = {
   SE: "Швеция",
   TR: "Турция",
 };
+
+export function countryName(code: string) {
+  return countryLabels[code] ?? new Intl.DisplayNames(["ru"], { type: "region" }).of(code) ?? code;
+}
 
 export function CountryFlag({ code }: { code: string }) {
   const normalizedCode = code.toUpperCase();

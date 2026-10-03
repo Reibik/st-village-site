@@ -1,5 +1,6 @@
 import type { MonitorStatus } from "@/src/server/status/types";
 import type { LiveStatusIncident, LiveStatusServer, LiveStatusSummary } from "@/src/server/status/live-types";
+import { cleanServerName, isAutomaticRoute } from "../../utils/server-label.mjs";
 
 const DEFAULT_SUMMARY_URL = "https://status.stvillage.ru/api/summary";
 const MAX_RESPONSE_SIZE = 750_000;
@@ -50,8 +51,8 @@ function sanitizeServer(value: unknown): LiveStatusServer | null {
   const latency = finiteNumber(source.latencyMs, 0, 60_000);
   return {
     id,
-    name: cleanText(source.name, "Сервер", 100),
-    countryCode: cleanText(source.cc, "", 2).toUpperCase(),
+    name: cleanServerName(cleanText(source.name, "Сервер", 100)),
+    countryCode: isAutomaticRoute(cleanText(source.name)) ? "" : cleanText(source.cc, "", 2).toUpperCase(),
     status: serverStatus(source),
     uptime30: finiteNumber(source.uptime30, 0, 100),
     latencyMs: latency === 0 ? null : latency,
@@ -70,7 +71,8 @@ function sanitizeIncident(value: unknown): LiveStatusIncident | null {
   const severity = (["info", "minor", "major", "critical"] as const).find((item) => item === severityValue) ?? "info";
   const affected = (Array.isArray(source.affected) ? source.affected : []).slice(0, 30).map((item) => {
     const affectedItem = record(item);
-    return { name: cleanText(affectedItem.name, "Сервер", 100), countryCode: cleanText(affectedItem.cc, "", 2).toUpperCase() };
+    const name = cleanText(affectedItem.name, "Сервер", 100);
+    return { name: cleanServerName(name), countryCode: isAutomaticRoute(name) ? "" : cleanText(affectedItem.cc, "", 2).toUpperCase() };
   });
   return {
     id: String(source.id ?? title).slice(0, 100),
@@ -92,8 +94,10 @@ export function normalizeLiveStatus(payload: unknown): LiveStatusSummary {
   const online = Math.min(total, wholeNumber(totalsSource.online, 0, 100));
   const maintenance = Math.min(total, wholeNumber(totalsSource.maintenance, 0, 100));
   const pollInterval = wholeNumber(source.pollInterval, 30, 600);
+  const baseStatus = overallStatus(online, total, maintenance);
+  const hasActiveIncident = incidents.some((incident) => incident.status !== "resolved" && incident.severity !== "info");
   return {
-    status: overallStatus(online, total, maintenance),
+    status: baseStatus === "operational" && hasActiveIncident ? "degraded" : baseStatus,
     generatedAt: timestampToIso(source.lastCheckTs) ?? new Date().toISOString(),
     refreshAfterSeconds: Math.min(60, pollInterval),
     totals: { online, total, maintenance, uptime30: finiteNumber(totalsSource.uptime30, 0, 100), averageLatencyMs: finiteNumber(totalsSource.avgLatency, 0, 60_000) },

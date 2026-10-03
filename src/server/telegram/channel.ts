@@ -1,4 +1,5 @@
-import { TELEGRAM_NEWS_CHANNEL, TELEGRAM_NEWS_URL } from "@/src/config/links";
+import { CABINET_URL, TELEGRAM_NEWS_CHANNEL, TELEGRAM_NEWS_URL } from "@/src/config/links";
+import { normalizeTelegramHref } from "../../utils/telegram-link.mjs";
 import { getStoredTelegramNewsPosts } from "@/src/server/storage/database";
 import type { StoredTelegramNewsPost, TelegramPost } from "@/src/server/telegram/types";
 
@@ -36,14 +37,7 @@ function escapeAttribute(value: string) {
 }
 
 function normalizeTelegramLink(rawHref: string): string | null {
-  try {
-    const href = decodeHtmlAttribute(rawHref.trim());
-    const url = new URL(href, TELEGRAM_PUBLIC_FEED_URL);
-    if (!["http:", "https:", "tg:"].includes(url.protocol)) return null;
-    return url.toString();
-  } catch {
-    return null;
-  }
+  return normalizeTelegramHref(decodeHtmlAttribute(rawHref), TELEGRAM_PUBLIC_FEED_URL, [new URL(CABINET_URL).hostname]);
 }
 
 function isAllowedTelegramMedia(rawUrl: string) {
@@ -87,7 +81,7 @@ export function sanitizeTelegramHtml(input: string): string {
     }
     if (tag === "span") {
       if (closing) return "</span>";
-      return /\bclass=(?:"[^"]*tg-spoiler[^"]*"|'[^']*tg-spoiler[^']*')/i.test(attributes) ? '<span class="tg-spoiler">' : "<span>";
+      return /\bclass=(?:"[^"]*tg-spoiler[^"]*"|'[^']*tg-spoiler[^']*')/i.test(attributes) ? '<span class="tg-spoiler" tabindex="0">' : "<span>";
     }
     if (tag === "tg-spoiler") return closing ? "</span>" : '<span class="tg-spoiler" tabindex="0">';
     if (tag === "tg-emoji") return closing ? "</span>" : '<span class="tg-custom-emoji">';
@@ -175,7 +169,7 @@ function storedPostToPublic(post: StoredTelegramNewsPost): TelegramPost {
   return {
     id: post.id,
     url: post.url,
-    html: post.html,
+    html: sanitizeTelegramHtml(post.html),
     images,
     attachments,
     poll: post.poll,

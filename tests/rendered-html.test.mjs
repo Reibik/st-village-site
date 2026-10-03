@@ -41,16 +41,15 @@ test("server-renders the ST VILLAGE public home page", async () => {
   const html = await response.text();
   assert.match(html, /<html lang="ru"/i);
   assert.match(html, /ST VILLAGE/);
-  assert.match(html, /Стабильное подключение/);
+  assert.match(html, /Защищённое<br\/>подключение/);
   assert.match(html, /Открыть личный кабинет/);
   assert.match(html, /https:\/\/cabinet\.stvillage\.top/);
   assert.match(html, /https:\/\/t\.me\/st_village_vpn_bot/);
   assert.match(html, /class="footer-version"[^>]*>v(?:<!-- -->)?1\.2\.0<\/a>/);
   assert.match(html, /href="\/release"/);
-  assert.match(html, /Попробуйте ST VILLAGE перед оплатой/);
+  assert.match(html, /Попробовать 1 день/);
   assert.match(html, /5 ГБ/);
   assert.match(html, /Белые списки — только на платных тарифах/);
-  assert.match(html, /Купонный дроп/);
   assert.match(html, /href="\/coupons"/);
   assert.match(html, /<source srcSet="\/brand-emblem\.avif" type="image\/avif"/);
   assert.match(html, /<source srcSet="\/brand-emblem\.webp" type="image\/webp"/);
@@ -67,7 +66,7 @@ test("home infrastructure is presented as a live network", async () => {
   const component = await readFile(new URL("../src/features/status/home-network-showcase.tsx", import.meta.url), "utf8");
 
   assert.match(html, /class="network-showcase"/);
-  assert.match(html, /Европа рядом/);
+  assert.match(html, /Не обещаем/);
   assert.match(html, /ST VILLAGE NETWORK/);
   assert.match(html, /href="\/status"/);
   assert.match(component, /fetch\("\/api\/live-status"/);
@@ -335,7 +334,7 @@ test("signed bot updates mirror rich Telegram posts and proxy their media", asyn
   const newsPayload = {
     id: "9001",
     channel: "exitcloud_vpn",
-    html: '<b>Важная новость</b><br><tg-spoiler>секрет</tg-spoiler>',
+    html: '<b>Важная новость</b><br><tg-spoiler>секрет</tg-spoiler><a href="cabinet.stvillage.top">Кабинет</a><a href="https://t.me/s/cabinet.stvillage.top">Старая ссылка</a>',
     buttons: [{ label: "Открыть кабинет", url: "https://cabinet.stvillage.top/", style: "primary" }],
     media: [{
       type: "video", fileId: "BAACAgIAAxkBAAIBexample_file_id", fileUniqueId: "AgADexample_unique",
@@ -373,6 +372,8 @@ test("signed bot updates mirror rich Telegram posts and proxy their media", asyn
     assert.equal(payload.posts[0].id, "9001");
     assert.equal(payload.posts[0].source, "bot");
     assert.match(payload.posts[0].html, /class="tg-spoiler"/);
+    assert.match(payload.posts[0].html, /class="tg-spoiler" tabindex="0"/);
+    assert.equal((payload.posts[0].html.match(/href="https:\/\/cabinet\.stvillage\.top\/"/g) ?? []).length, 2);
     assert.equal(payload.posts[0].attachments[0].type, "video");
     assert.equal(payload.posts[0].poll.totalVoterCount, 10);
     assert.equal(payload.posts[0].buttons[0].style, "primary");
@@ -766,7 +767,8 @@ test("v1.2.0 operational release safeguards are present", async () => {
 
   assert.equal(packageJson.version, "1.2.0");
   assert.match(packageJson.scripts.typecheck, /tsc --noEmit/);
-  assert.match(packageJson.scripts["release:check"], /lint.*typecheck.*build.*rendered-html/s);
+  assert.match(packageJson.scripts["release:check"], /lint.*typecheck.*test:performance.*pnpm test/s);
+  assert.match(packageJson.scripts.test, /build.*rendered-html.*landing-data.*telegram-link/s);
   assert.match(workflow, /pnpm release:check/);
   assert.match(workflow, /permissions:\s+contents: read/s);
   assert.match(workflow, /branches: \[main, dev\]/);

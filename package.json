@@ -10,14 +10,14 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "vinext start",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs",
+    "test": "pnpm build && node --test tests/rendered-html.test.mjs && node --experimental-strip-types --test tests/landing-data.test.mjs tests/telegram-link.test.mjs",
     "test:links": "node scripts/check-client-links.mjs",
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
     "test:performance": "node scripts/check-performance-budget.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern worker",
     "typecheck": "tsc --noEmit --pretty false",
-    "release:check": "pnpm lint && pnpm typecheck && pnpm test:performance && pnpm build && node --test tests/rendered-html.test.mjs"
+    "release:check": "pnpm lint && pnpm typecheck && pnpm test:performance && pnpm test"
   },
   "dependencies": {
     "next": "16.2.11",

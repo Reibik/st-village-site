@@ -1,110 +1,64 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { CountryFlag } from "@/src/components/country-flag";
-import { locations } from "@/src/config/content";
-import type { LiveStatusServer, LiveStatusSummary } from "@/src/server/status/live-types";
-import type { MonitorStatus } from "@/src/server/status/types";
+import { useEffect, useState } from "react";
+import { CountryFlag, countryName } from "@/src/components/country-flag";
+import type { LiveStatusSummary } from "@/src/server/status/live-types";
+import { getNetworkCountries, isLiveStatusStale } from "./network-catalog";
 
-const statusPriority: Record<MonitorStatus, number> = {
-  operational: 0,
-  maintenance: 1,
-  degraded: 2,
-  outage: 3,
-  unknown: 4,
-};
-
-const statusLabels: Record<MonitorStatus, string> = {
-  operational: "Работает",
-  maintenance: "Работы",
-  degraded: "Нестабильно",
-  outage: "Недоступно",
-  unknown: "Проверяем",
-};
-
-function aggregateLocation(servers: LiveStatusServer[]) {
-  if (!servers.length) return { status: "unknown" as MonitorStatus, online: 0, total: 0 };
-  const status = [...servers].sort((left, right) => statusPriority[right.status] - statusPriority[left.status])[0].status;
-  return {
-    status,
-    online: servers.reduce((total, server) => total + server.membersOnline, 0),
-    total: servers.reduce((total, server) => total + server.members, 0),
-  };
-}
+const labels = { operational: "Сеть работает", maintenance: "Технические работы", degraded: "Есть ограничения", outage: "Сеть недоступна", unknown: "Получаем данные" };
 
 export function HomeNetworkShowcase() {
   const [summary, setSummary] = useState<LiveStatusSummary | null>(null);
-
+  const [failed, setFailed] = useState(false);
+  const [now, setNow] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
+    let loading = false;
     const load = async () => {
+      if (loading) return;
+      loading = true;
       try {
-        const response = await fetch("/api/live-status", { cache: "no-store", signal: controller.signal });
-        if (!response.ok) return;
-        setSummary(await response.json() as LiveStatusSummary);
+        const response = await fetch("/api/live-status", { cache: "no-store", signal: AbortSignal.any([controller.signal, AbortSignal.timeout(10_000)]) });
+        if (!response.ok) throw new Error("Status unavailable");
+        const data = await response.json() as LiveStatusSummary;
+        if (!Array.isArray(data.servers) || !data.totals) throw new Error("Invalid status");
+        if (!controller.signal.aborted) { setSummary(data); setFailed(false); setNow(Date.now()); }
       } catch {
-        // The static network overview remains useful when live status is temporarily unavailable.
-      }
+        if (!controller.signal.aborted) setFailed(true);
+      } finally { loading = false; }
     };
     void load();
-    const timer = window.setInterval(() => void load(), 60_000);
-    return () => {
-      controller.abort();
-      window.clearInterval(timer);
-    };
+    const timer = window.setInterval(() => { setNow(Date.now()); void load(); }, 60_000);
+    const visible = () => { if (document.visibilityState === "visible") { setNow(Date.now()); void load(); } };
+    document.addEventListener("visibilitychange", visible);
+    return () => { controller.abort(); window.clearInterval(timer); document.removeEventListener("visibilitychange", visible); };
   }, []);
-
-  const locationStates = useMemo(() => new Map(locations.map((location) => [
-    location.code,
-    aggregateLocation(summary?.servers.filter((server) => server.countryCode === location.code) ?? []),
-  ])), [summary]);
-
-  const overallStatus = summary?.status ?? "unknown";
-
-  return (
-    <section className="section-shell section-block" id="locations" aria-labelledby="network-title">
-      <div className="network-showcase">
-        <span className="network-ambient network-ambient-one" aria-hidden="true" />
-        <span className="network-ambient network-ambient-two" aria-hidden="true" />
-
-        <div className="network-copy">
-          <div className="eyebrow"><span className={`network-live-dot network-live-${overallStatus}`} /> Сеть ST VILLAGE</div>
-          <h2 id="network-title">Европа рядом.<br /><span>Сеть всегда на виду.</span></h2>
-          <p>Выбирайте подходящий маршрут, а состояние инфраструктуры проверяйте в реальном времени. Данные обновляются автоматически и без скрытых показателей.</p>
-
-          <div className="network-facts" aria-label="Показатели инфраструктуры">
-            <div><strong>{summary ? `${summary.totals.online}/${summary.totals.total}` : "—"}</strong><span>узлов сейчас в сети</span></div>
-            <div><strong>{locations.length}</strong><span>стран в инфраструктуре</span></div>
-            <div><strong>60 сек</strong><span>интервал обновления</span></div>
-          </div>
-
-          <div className="network-actions">
-            <a className="button button-primary" href="/status">Открыть живой мониторинг <span aria-hidden="true">→</span></a>
-            <span className={`network-overall network-overall-${overallStatus}`}><i />{summary ? statusLabels[overallStatus] : "Получаем данные"}</span>
-          </div>
-        </div>
-
-        <div className="network-map" aria-label="Схема серверной сети ST VILLAGE">
-          <span className="network-map-caption" aria-hidden="true">ST VILLAGE NETWORK · EUROPE</span>
-          {locations.map((location) => {
-            const state = locationStates.get(location.code) ?? { status: "unknown" as MonitorStatus, online: 0, total: 0 };
-            return (
-              <div className={`network-node network-node-${location.code.toLowerCase()} network-node-${state.status}`} key={location.code}>
-                <CountryFlag code={location.code} />
-                <div><strong>{location.name}</strong><small>{state.total ? `${state.online}/${state.total} узлов в сети` : location.region}</small></div>
-                <span className="network-node-state" aria-label={statusLabels[state.status]} />
-              </div>
-            );
-          })}
-          {locations.map((location) => <span className={`network-link network-link-${location.code.toLowerCase()}`} aria-hidden="true" key={`link-${location.code}`} />)}
-          <div className="network-core">
-            <span className="network-core-pulse" aria-hidden="true" />
-            <strong>{summary ? summary.totals.online : "ST"}</strong>
-            <small>{summary ? "узлов онлайн" : "центр сети"}</small>
-          </div>
-          <div className="network-legend"><span><i className="network-live-operational" /> Доступно</span><span><i className="network-live-unknown" /> Обновляется онлайн</span></div>
-        </div>
+  const stale = !!summary && (failed || isLiveStatusStale(summary, now));
+  const countries = summary ? getNetworkCountries(summary.servers) : [];
+  const status = stale || !summary ? "unknown" : summary.status;
+  return <section className="section-shell section-block" id="locations" aria-labelledby="network-title">
+    <div className="network-showcase">
+      <div className="network-copy">
+        <div className="eyebrow">Открытая инфраструктура</div>
+        <h2 id="network-title">Не обещаем.<br /><span>Показываем.</span></h2>
+        <p>Состояние сети — не рекламная цифра. Проверяйте доступность серверов и активные инциденты в независимом мониторинге.</p>
+        <a className="text-link" href="/status">Открыть живой мониторинг <span aria-hidden="true">→</span></a>
       </div>
-    </section>
-  );
+      <div className="network-console" aria-label="Сводка серверной сети ST VILLAGE">
+        <div className="network-console-header"><span>ST VILLAGE NETWORK</span><span className={`network-overall network-overall-${status}`}><i />{stale ? "Данные устарели" : failed ? "Сводка недоступна" : labels[status]}</span></div>
+        <div className="network-facts">
+          <div><strong>{summary ? `${summary.totals.online}/${summary.totals.total}` : "—"}</strong><span>{stale ? "в последней сводке" : "узлов и маршрутов"}</span></div>
+          <div><strong>{summary ? countries.length : "—"}</strong><span>стран в сети</span></div>
+          <div><strong>60 сек</strong><span>обновление сводки</span></div>
+        </div>
+        <div className="network-country-grid">
+          {countries.map((country) => <div className={`network-country network-node-${stale ? "unknown" : country.status}`} key={country.code}>
+            <CountryFlag code={country.code} /><div><strong>{countryName(country.code)}</strong><small>{stale ? "Последние данные" : `${country.online}/${country.total} узлов в сети`}</small></div><span className="network-node-state" aria-label={stale ? "Данные устарели" : labels[country.status]} />
+          </div>)}
+          {!countries.length && <p>{failed ? "Не удалось получить сводку. Полный мониторинг доступен по ссылке." : "Загружаем актуальные локации…"}</p>}
+        </div>
+        <p className="network-console-note">{stale ? "Не считаем сохранённые данные текущей доступностью." : summary?.incidents.some((item) => item.status !== "resolved") ? "Есть активные сообщения мониторинга. Подробности — на странице статуса." : "Автоматические маршруты не входят в число стран."}</p>
+      </div>
+    </div>
+  </section>;
 }

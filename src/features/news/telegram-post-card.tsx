@@ -31,7 +31,7 @@ function TelegramAttachment({ attachment }: { attachment: TelegramNewsAttachment
 export function TelegramPostCard({ post }: { post: TelegramPost }) {
   const jsonLd = createNewsArticleJsonLd(post);
   return (
-    <article className="telegram-post-card">
+    <article className="telegram-post-card" id={`post-${post.id}`} tabIndex={-1}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(jsonLd) }} />
       <div className="telegram-post-accent" aria-hidden="true" />
       <header className="telegram-post-header">

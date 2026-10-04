@@ -1,7 +1,7 @@
 import { SITE_RELEASE } from "@/src/config/release";
 import { verifySiteBotRequest, siteBotUnauthorizedResponse } from "@/src/server/security/site-bot-auth";
 import { fetchLiveStatus } from "@/src/server/status/live-status";
-import { getActiveSiteAnnouncements, getIncidents, getManagedReviews, getPrivateMetricsSummary } from "@/src/server/storage/database";
+import { getActiveSiteAnnouncements, getIncidents, getPrivateMetricsSummary } from "@/src/server/storage/database";
 import { checkRateLimit, rateLimitResponse } from "@/src/server/security/rate-limit";
 
 export async function GET(request: Request) {
@@ -9,9 +9,9 @@ export async function GET(request: Request) {
   if (!rateLimit.allowed) return rateLimitResponse(rateLimit.retryAfterSeconds);
   if (!await verifySiteBotRequest(request)) return siteBotUnauthorizedResponse();
 
-  const [live, incidents, announcements, pendingReviews, analytics] = await Promise.all([
+  const [live, incidents, announcements, analytics] = await Promise.all([
     fetchLiveStatus().catch(() => null),
-    getIncidents(), getActiveSiteAnnouncements(), getManagedReviews("pending"), getPrivateMetricsSummary(7),
+    getIncidents(), getActiveSiteAnnouncements(), getPrivateMetricsSummary(7),
   ]);
   const activeIncidents = incidents.filter((item) => item.status !== "resolved");
   return Response.json({
@@ -21,7 +21,6 @@ export async function GET(request: Request) {
     infrastructure: live ? { status: live.status, ...live.totals } : null,
     incidents: { active: activeIncidents.length, scheduled: activeIncidents.filter((item) => item.status === "scheduled").length },
     announcements: { active: announcements.length },
-    reviews: { pending: pendingReviews.length },
     analytics,
   }, { headers: { "Cache-Control": "no-store" } });
 }

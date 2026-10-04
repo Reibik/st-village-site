@@ -7,12 +7,12 @@ export const metadata: Metadata = {
 };
 
 export default function StatusManagementPage() {
-  return <main className="section-shell page-content moderation-page">
+  return <div className="section-shell page-content status-admin-page">
     <header className="section-heading">
       <span className="eyebrow">Закрытый раздел</span>
       <h1>Управление статусом</h1>
       <p>Публикуйте инциденты и технические работы, следите за переходами и реальными показателями загрузки без cookie.</p>
     </header>
     <StatusManagement />
-  </main>;
+  </div>;
 }

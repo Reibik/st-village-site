@@ -46,11 +46,13 @@ async function request(url, method) {
 
 async function probe(url) {
   let lastError = null;
+  let lastHttpFailure = null;
   for (let attempt = 1; attempt <= 2; attempt += 1) {
     try {
       let result = await request(url, "HEAD");
       if ([403, 405].includes(result.status)) result = await request(url, "GET");
       if (result.ok) return { url, ...result };
+      lastHttpFailure = result;
       lastError = new Error(`HTTP ${result.status}`);
     } catch (error) {
       lastError = error;
@@ -59,9 +61,9 @@ async function probe(url) {
   return {
     url,
     ok: false,
-    status: 0,
-    finalUrl: "",
-    error: lastError instanceof Error ? lastError.message : "Неизвестная ошибка",
+    status: lastHttpFailure?.status ?? 0,
+    finalUrl: lastHttpFailure?.finalUrl ?? "",
+    error: lastHttpFailure ? `HTTP ${lastHttpFailure.status}` : lastError instanceof Error ? lastError.message : "Неизвестная ошибка",
   };
 }
 

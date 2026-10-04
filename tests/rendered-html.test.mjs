@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
-import { readFile, stat } from "node:fs/promises";
+import { readFile, stat, mkdtemp, writeFile, rm } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
 
 process.env.STATUS_PROBE_TIMEOUT_MS = "500";
@@ -83,7 +86,6 @@ test("all public pages render their expected content", async () => {
     ["/connect", "Happ и INCY — два основных приложения"],
     ["/status", "Состояние инфраструктуры"],
     ["/news", "Новости ST VILLAGE"],
-    ["/reviews", "Честная обратная связь"],
     ["/support", "Помощь, когда она нужна"],
     ["/release", "Фирменная орбита — новый облик ST VILLAGE"],
     ["/legal/privacy", "Политика конфиденциальности 🚀ST VILLAGE🚀"],
@@ -113,6 +115,106 @@ test("all public pages render their expected content", async () => {
     }
     assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|lorem ipsum/i, path);
   }
+});
+
+test("retired reviews are gone from every old endpoint and all public navigation", async () => {
+  for (const path of ["/reviews", "/reviews/moderation"]) {
+    const response = await worker.fetch(new Request(`http://localhost${path}`, { headers: { accept: "text/html" } }), env, context);
+    assert.equal(response.status, 410, path);
+    assert.match(response.headers.get("x-robots-tag") ?? "", /noindex/);
+    assert.doesNotMatch(await response.text(), /<form|REVIEWS_ADMIN_TOKEN/);
+  }
+  for (const method of ["GET", "HEAD", "POST", "PATCH", "DELETE", "PUT", "OPTIONS"]) {
+    const response = await worker.fetch(new Request("http://localhost/api/reviews?status=pending", { method }), env, context);
+    assert.equal(response.status, 410, method);
+    assert.match(response.headers.get("cache-control") ?? "", /no-store/);
+    if (method !== "HEAD") assert.deepEqual(await response.json(), { error: "gone" });
+  }
+  for (const path of ["/", "/pricing", "/connect", "/status", "/news", "/support", "/legal/privacy", "/sitemap.xml"]) {
+    const response = await worker.fetch(new Request(`http://localhost${path}`, { headers: { accept: "text/html" } }), env, context);
+    assert.equal(response.status, 200, path);
+    assert.doesNotMatch(await response.text(), /href="\/reviews|https:\/\/stvillage\.top\/reviews|<form[^>]*review|Имя или псевдоним, оценку и текст отзыва/);
+  }
+});
+
+test("analytics rejects oversized bodies without accepting an event", async () => {
+  for (const headers of [{}, { "content-length": "20000" }]) {
+    const response = await worker.fetch(new Request("http://localhost/api/analytics", {
+      method: "POST", body: " ".repeat(20_000) + "{}", headers,
+    }), env, context);
+    assert.equal(response.status, 413);
+    assert.match(response.headers.get("cache-control") ?? "", /no-store/);
+  }
+});
+
+test("website bot summary no longer reads or exposes a review queue", async () => {
+  const response = await worker.fetch(await signedBotRequest("/api/bot-admin/dashboard"), env, context);
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.equal(Object.hasOwn(payload, "reviews"), false);
+  assert.equal(payload.release.version, "1.3.0");
+});
+
+test("retired review records survive normal writes and scheduled archive cleanup", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "st-village-archive-test-"));
+  const path = join(directory, "observability.json");
+  const reviews = [{ id: "archived", status: "rejected", comment: "Private archive", createdAt: "2000-01-01T00:00:00Z" }];
+  await writeFile(path, JSON.stringify({ reviews, legacyExtension: { preserved: true } }));
+  try {
+    const result = spawnSync(process.execPath, ["--input-type=module", "-e", `
+      import assert from "node:assert/strict";
+      globalThis.fetch = async () => new Response(null, { status: 503 });
+      const { default: worker } = await import(${JSON.stringify(workerUrl.href)});
+      const tasks = [];
+      const context = { waitUntil(task) { tasks.push(task); }, passThroughOnException() {} };
+      const env = { ASSETS: { fetch: async () => new Response(null, { status: 404 }) } };
+      const response = await worker.fetch(new Request("http://localhost/api/analytics", {
+        method: "POST", body: JSON.stringify({ eventType: "outbound_click", destination: "cabinet", page: "/" }),
+      }), env, context);
+      assert.equal(response.status, 202);
+      assert.equal((await response.json()).stored, true);
+      await worker.scheduled({}, env, context);
+      await Promise.all(tasks);
+    `], { encoding: "utf8", timeout: 20_000, env: {
+      ...process.env, OBSERVABILITY_FILE_PATH: path, STATUS_TELEGRAM_NOTIFICATIONS_DISABLED: "1",
+    } });
+    assert.equal(result.status, 0, result.stdout + result.stderr);
+    const stored = JSON.parse(await readFile(path, "utf8"));
+    assert.deepEqual(stored.reviews, reviews);
+    assert.deepEqual(stored.legacyExtension, { preserved: true });
+    assert.ok(Object.keys(stored.metrics).length > 0);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("incident admin still distinguishes authorization, malformed JSON and oversized JSON", async () => {
+  const previous = process.env.STATUS_ADMIN_TOKEN;
+  process.env.STATUS_ADMIN_TOKEN = "test-status-admin-token";
+  try {
+    for (const [token, body, expected] of [
+      ["wrong-token", " ".repeat(20_000), 401],
+      ["test-status-admin-token", "{", 400],
+      ["test-status-admin-token", " ".repeat(20_000) + "{}", 413],
+    ]) {
+      const response = await worker.fetch(new Request("http://localhost/api/incidents", {
+        method: "POST", body, headers: { "x-st-village-status-token": token },
+      }), env, context);
+      assert.equal(response.status, expected);
+    }
+  } finally {
+    if (previous === undefined) delete process.env.STATUS_ADMIN_TOKEN;
+    else process.env.STATUS_ADMIN_TOKEN = previous;
+  }
+});
+
+test("status management has one main landmark and independent admin styling", async () => {
+  const response = await worker.fetch(new Request("http://localhost/status/management"), env, context);
+  assert.equal(response.status, 200);
+  const html = await response.text();
+  assert.equal((html.match(/<main\b/g) ?? []).length, 1);
+  assert.match(html, /status-admin-page/);
+  assert.doesNotMatch(html, /moderation-page/);
 });
 
 test("closed coupon API never exposes a coupon or schedule", async () => {
@@ -631,7 +733,7 @@ test("search engines and social platforms receive complete page metadata", async
   assert.match(sitemapXml, /https:\/\/stvillage\.top\/legal\/privacy/);
   assert.match(sitemapXml, /https:\/\/stvillage\.top\/legal\/terms/);
   assert.match(sitemapXml, /https:\/\/stvillage\.top\/release/);
-  assert.match(sitemapXml, /https:\/\/stvillage\.top\/reviews/);
+  assert.doesNotMatch(sitemapXml, /https:\/\/stvillage\.top\/reviews/);
 
   const manifest = await worker.fetch(new Request("http://localhost/manifest.webmanifest"), env, context);
   const manifestJson = await manifest.json();
@@ -687,7 +789,7 @@ test("official client links and visual baselines are checked automatically", asy
   assert.match(visualSpec, /home-hero\.png/);
   assert.match(visualSpec, /pricing-page\.png/);
   assert.match(visualSpec, /status-observability\.png/);
-  assert.match(visualSpec, /reviews-page\.png/);
+
   assert.match(checklist, /\[x\] Расширенная Schema\.org-разметка тарифов, FAQ и новостей/);
   assert.match(checklist, /\[x\] Автоматическая проверка внешних ссылок Happ и INCY/);
   assert.match(checklist, /\[x\] Визуальные регрессионные тесты для desktop и mobile/);
@@ -731,62 +833,6 @@ test("observability, incidents, regional checks and private analytics are wired"
   assert.match(migration, /CREATE TABLE IF NOT EXISTS incidents/);
   assert.match(migration, /CREATE INDEX IF NOT EXISTS idx_status_samples_checked_at/);
   assert.match(migration, /PRAGMA optimize/);
-});
-
-test("reviews are moderated and the checklist contains no unfinished items", async () => {
-  const reviewsPage = await worker.fetch(new Request("http://localhost/reviews", { headers: { accept: "text/html" } }), env, context);
-  const html = await reviewsPage.text();
-  assert.match(html, /Честная обратная связь/);
-  assert.match(html, /ручную модерацию/);
-  assert.doesNotMatch(html, /Иван|Мария|Алексей/);
-
-  const invalid = await worker.fetch(new Request("http://localhost/api/reviews", {
-    method: "POST", headers: { "content-type": "application/json" },
-    body: JSON.stringify({ displayName: "A", rating: 8, text: "short" }),
-  }), env, context);
-  assert.equal(invalid.status, 400);
-
-  const reviewRoute = await readFile(new URL("../app/api/reviews/route.ts", import.meta.url), "utf8");
-  const reviewBoard = await readFile(new URL("../src/features/reviews/reviews-board.tsx", import.meta.url), "utf8");
-  const moderationPage = await readFile(new URL("../src/features/reviews/reviews-moderation.tsx", import.meta.url), "utf8");
-  const reviewNotifications = await readFile(new URL("../src/server/reviews/notifications.ts", import.meta.url), "utf8");
-  const storage = await readFile(new URL("../src/server/storage/database.ts", import.meta.url), "utf8");
-  const devDeploy = await readFile(new URL("../ops/vps/deploy-dev.sh", import.meta.url), "utf8");
-  const checklist = await readFile(new URL("../SITE_IMPROVEMENT_CHECKLIST.md", import.meta.url), "utf8");
-  assert.match(reviewRoute, /REVIEWS_ADMIN_TOKEN/);
-  assert.match(reviewRoute, /pendingModeration/);
-  assert.match(reviewRoute, /getManagedReviews/);
-  assert.match(reviewRoute, /notifyReviewSubmission/);
-  assert.match(reviewBoard, /const formElement = event\.currentTarget/);
-  assert.match(reviewBoard, /formElement\.reset\(\)/);
-  assert.match(reviewBoard, /response\.json\(\)\.catch/);
-  assert.match(reviewBoard, /role=\{state === "error" \? "alert" : "status"\}/);
-  assert.match(moderationPage, /"X-ST-Village-Admin-Token": token/);
-  assert.doesNotMatch(moderationPage, /Authorization: `Bearer/);
-  assert.match(reviewRoute, /x-st-village-admin-token/);
-  assert.match(moderationPage, /"approved"/);
-  assert.match(moderationPage, /"rejected"/);
-  assert.match(reviewNotifications, /STATUS_ALERT_TELEGRAM_BOT_TOKEN/);
-  assert.match(reviewNotifications, /inline_keyboard/);
-  assert.match(storage, /\/opt\/st-village-dev\/data\/observability\.json/);
-  assert.match(devDeploy, /pre-persistence review queue/);
-  assert.doesNotMatch(checklist, /- \[ \]/);
-  for (const item of ["История доступности", "Лента инцидентов", "Приватная аналитика", "Core Web Vitals"]) {
-    assert.match(checklist, new RegExp(`\\[x\\].*${item}`));
-  }
-});
-
-test("public review submissions are rate limited before storage work", async () => {
-  const statuses = [];
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    const response = await worker.fetch(new Request("http://localhost/api/reviews", {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-forwarded-for": "198.51.100.77" },
-      body: JSON.stringify({ displayName: "A", rating: 8, text: "short" }),
-    }), env, context);
-    statuses.push(response.status);
-  }
-  assert.deepEqual(statuses, [400, 400, 400, 400, 429]);
 });
 
 test("accessibility and performance safeguards cover the new public surfaces", async () => {
@@ -847,7 +893,6 @@ test("production operations include durable storage, verified backups, protected
   const backupTimer = await readFile(new URL("../ops/vps/st-village-backup.timer", import.meta.url), "utf8");
   const adminInstaller = await readFile(new URL("../ops/vps/install-admin-auth.sh", import.meta.url), "utf8");
   const rateLimit = await readFile(new URL("../src/server/security/rate-limit.ts", import.meta.url), "utf8");
-  const reviewsRoute = await readFile(new URL("../app/api/reviews/route.ts", import.meta.url), "utf8");
   const incidentsRoute = await readFile(new URL("../app/api/incidents/route.ts", import.meta.url), "utf8");
   const analyticsRoute = await readFile(new URL("../app/api/analytics/route.ts", import.meta.url), "utf8");
   const management = await readFile(new URL("../src/features/status/status-management.tsx", import.meta.url), "utf8");
@@ -874,7 +919,6 @@ test("production operations include durable storage, verified backups, protected
   assert.match(adminInstaller, /caddy hash-password --algorithm bcrypt/);
   assert.match(rateLimit, /RATE_LIMIT_SECRET/);
   assert.match(rateLimit, /Retry-After/);
-  assert.match(reviewsRoute, /checkRateLimit/);
   assert.match(incidentsRoute, /readJsonLimited/);
   assert.match(analyticsRoute, /getPrivateMetricsSummary/);
   assert.match(management, /X-ST-Village-Status-Token/);

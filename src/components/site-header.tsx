@@ -51,7 +51,7 @@ export function SiteHeader() {
           <button ref={menuButton} className="menu-toggle" type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-controls="mobile-nav" aria-label={open ? "Закрыть меню" : "Открыть меню"}>{open ? "×" : "≡"}</button>
         </div>
       </div>
-      {open && <nav className="mobile-nav section-shell" id="mobile-nav" aria-label="Мобильная навигация">{navItems.map(([label, href]) => href === "/coupons" ? <CouponsComingSoon key={href} /> : <Link href={href} key={href} aria-current={isCurrent(href)} onClick={() => setOpen(false)}>{label}</Link>)}<Link href="/reviews" aria-current={isCurrent("/reviews")} onClick={() => setOpen(false)}>Отзывы</Link><a href={CABINET_URL} target="_blank" rel="noreferrer" onClick={() => setOpen(false)}>Открыть личный кабинет ↗</a></nav>}
+      {open && <nav className="mobile-nav section-shell" id="mobile-nav" aria-label="Мобильная навигация">{navItems.map(([label, href]) => href === "/coupons" ? <CouponsComingSoon key={href} /> : <Link href={href} key={href} aria-current={isCurrent(href)} onClick={() => setOpen(false)}>{label}</Link>)}<a href={CABINET_URL} target="_blank" rel="noreferrer" onClick={() => setOpen(false)}>Открыть личный кабинет ↗</a></nav>}
     </header>
   );
 }

@@ -10,8 +10,13 @@ unauthorized_status="$(curl --silent --output /dev/null --write-out '%{http_code
 
 curl_auth=(--user "${ST_VILLAGE_DEV_AUTH_USER}:${ST_VILLAGE_DEV_AUTH_PASSWORD}")
 
-for path in / /pricing /connect /status /status/management /news /reviews /reviews/moderation /support /release /robots.txt /api/health /api/observability; do
+for path in / /pricing /connect /status /status/management /news /support /release /robots.txt /api/health /api/observability; do
   curl --fail --silent --show-error --location --max-time 15 "${curl_auth[@]}" "${base_url}${path}" >/dev/null
+done
+
+for path in /reviews /reviews/moderation /api/reviews; do
+  retired_status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' --max-time 15 "${curl_auth[@]}" "${base_url}${path}")"
+  [[ "$retired_status" == "410" ]]
 done
 
 headers="$(curl --fail --silent --show-error --head --max-time 15 "${curl_auth[@]}" "${base_url}/")"

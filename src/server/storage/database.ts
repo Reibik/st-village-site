@@ -37,17 +37,6 @@ export type PrivateMetricsSummary = {
   outbound: { cabinet: number; telegram: number };
   vitals: Array<{ name: string; average: number; samples: number }>;
 };
-export type PublicReview = {
-  id: string;
-  displayName: string;
-  rating: number;
-  text: string;
-  createdAt: string;
-};
-export type ManagedReview = PublicReview & {
-  status: "pending" | "approved" | "rejected";
-  moderatedAt?: string;
-};
 export type SiteAnnouncement = {
   id: string;
   kind: "info" | "update" | "maintenance" | "critical" | "promo";
@@ -76,17 +65,16 @@ export type SiteAdminAuditEntry = {
 let databasePromise: Promise<D1DatabaseLike | null> | null = null;
 let schemaReady: Promise<void> | null = null;
 const memorySamples: HistoryPoint[] = [];
-const memoryReviews: PublicReview[] = [];
 const memoryAlerts = new Map<string, string>();
 const memoryAnnouncements: SiteAnnouncement[] = [];
 const memoryAudit: SiteAdminAuditEntry[] = [];
 const memoryTelegramNews: StoredTelegramNewsPost[] = [];
 
-type StoredReview = PublicReview & { status: "pending" | "approved" | "rejected"; moderatedAt?: string };
 type FileState = {
   samples: HistoryPoint[];
   incidents: Incident[];
-  reviews: StoredReview[];
+  // Retired reviews remain an opaque archive; no API reads or modifies them.
+  reviews: unknown[];
   alerts: Record<string, string>;
   metrics: Record<string, number>;
   announcements: SiteAnnouncement[];
@@ -274,79 +262,6 @@ export async function saveIncident(incident: Incident) {
       incident.id, incident.title, incident.summary, incident.severity, incident.status,
       incident.planned ? 1 : 0, JSON.stringify(incident.affectedServices), incident.startsAt, incident.resolvedAt,
     ).run();
-  return true;
-}
-
-export async function getApprovedReviews(): Promise<PublicReview[]> {
-  const database = await getDatabase();
-  if (!database) {
-    const store = await getFileStore();
-    return store ? store.state.reviews.filter((review) => review.status === "approved").slice(0, 12) : memoryReviews;
-  }
-  const rows = (await database.prepare(`SELECT id, display_name, rating, text, created_at FROM reviews
-    WHERE status = 'approved' ORDER BY created_at DESC LIMIT 12`).all<Record<string, unknown>>()).results ?? [];
-  return rows.map((row) => ({ id: String(row.id), displayName: String(row.display_name), rating: Number(row.rating), text: String(row.text), createdAt: String(row.created_at) }));
-}
-
-export async function getManagedReviews(status: ManagedReview["status"]): Promise<ManagedReview[]> {
-  const database = await getDatabase();
-  if (!database) {
-    const store = await getFileStore();
-    return (store?.state.reviews ?? [])
-      .filter((review) => review.status === status)
-      .slice(0, 100);
-  }
-  const rows = (await database.prepare(`SELECT id, display_name, rating, text, status, created_at, moderated_at
-    FROM reviews WHERE status = ? ORDER BY created_at DESC LIMIT 100`).bind(status).all<Record<string, unknown>>()).results ?? [];
-  return rows.map((row) => ({
-    id: String(row.id), displayName: String(row.display_name), rating: Number(row.rating), text: String(row.text),
-    status: row.status as ManagedReview["status"], createdAt: String(row.created_at),
-    moderatedAt: row.moderated_at ? String(row.moderated_at) : undefined,
-  }));
-}
-
-export async function submitReview(review: Omit<PublicReview, "id" | "createdAt">) {
-  const id = crypto.randomUUID();
-  const createdAt = new Date().toISOString();
-  const database = await getDatabase();
-  if (!database) {
-    const store = await getFileStore();
-    if (!store) return { id, stored: false };
-    store.state.reviews.unshift({ id, createdAt, status: "pending", ...review });
-    return { id, stored: await persistFileStore(store) };
-  }
-  await database.prepare(`INSERT INTO reviews (id, display_name, rating, text, status, created_at)
-    VALUES (?, ?, ?, ?, 'pending', ?)`).bind(id, review.displayName, review.rating, review.text, createdAt).run();
-  return { id, stored: true };
-}
-
-export async function moderateReview(id: string, status: "approved" | "rejected") {
-  const database = await getDatabase();
-  if (!database) {
-    const store = await getFileStore();
-    const review = store?.state.reviews.find((item) => item.id === id);
-    if (!store || !review) return false;
-    review.status = status;
-    review.moderatedAt = new Date().toISOString();
-    return persistFileStore(store);
-  }
-  await database.prepare("UPDATE reviews SET status = ?, moderated_at = ? WHERE id = ?")
-    .bind(status, new Date().toISOString(), id).run();
-  return true;
-}
-
-export async function deleteReview(id: string) {
-  const database = await getDatabase();
-  if (!database) {
-    const store = await getFileStore();
-    if (!store) return false;
-    const before = store.state.reviews.length;
-    store.state.reviews = store.state.reviews.filter((item) => item.id !== id);
-    return before !== store.state.reviews.length && persistFileStore(store);
-  }
-  const existing = await database.prepare("SELECT id FROM reviews WHERE id = ?").bind(id).first<{ id: string }>();
-  if (!existing) return false;
-  await database.prepare("DELETE FROM reviews WHERE id = ?").bind(id).run();
   return true;
 }
 
@@ -627,9 +542,7 @@ export async function cleanupObservability() {
     const store = await getFileStore();
     if (!store) return false;
     const sampleCutoff = new Date(Date.now() - 45 * 86_400_000).toISOString();
-    const reviewCutoff = new Date(Date.now() - 30 * 86_400_000).toISOString();
     store.state.samples = store.state.samples.filter((item) => item.checkedAt >= sampleCutoff);
-    store.state.reviews = store.state.reviews.filter((item) => item.status !== "rejected" || item.createdAt >= reviewCutoff);
     const metricCutoff = new Date(Date.now() - 90 * 86_400_000).toISOString().slice(0, 10);
     store.state.metrics = Object.fromEntries(Object.entries(store.state.metrics).filter(([key]) => key.slice(0, 10) >= metricCutoff));
     store.state.audit = (store.state.audit ?? []).filter((item) => item.createdAt >= new Date(Date.now() - 180 * 86_400_000).toISOString());
@@ -638,7 +551,6 @@ export async function cleanupObservability() {
   await database.batch([
     database.prepare("DELETE FROM status_samples WHERE checked_at < datetime('now', '-45 days')"),
     database.prepare("DELETE FROM private_metrics WHERE created_at < datetime('now', '-90 days')"),
-    database.prepare("DELETE FROM reviews WHERE status = 'rejected' AND created_at < datetime('now', '-30 days')"),
     database.prepare("DELETE FROM site_admin_audit WHERE created_at < datetime('now', '-180 days')"),
   ]);
   return true;

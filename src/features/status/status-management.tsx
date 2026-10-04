@@ -73,10 +73,10 @@ export function StatusManagement() {
     setMessage("Данные перенесены в форму. Проверьте и нажмите «Сохранить публикацию».");
   }
 
-  if (!authenticated) return <form className="moderation-login glass-card" onSubmit={load}>
+  if (!authenticated) return <form className="status-admin-login glass-card" onSubmit={load}>
     <label>STATUS_ADMIN_TOKEN<input type="password" value={token} onChange={(event) => setToken(event.target.value)} autoComplete="current-password" required /></label>
     <button className="button button-primary" type="submit" disabled={busy}>Открыть управление</button>
-    {message && <p className="review-message review-message-error" role="alert">{message}</p>}
+    {message && <p className="admin-message admin-message-error" role="alert">{message}</p>}
   </form>;
 
   return <div className="status-management">
@@ -95,16 +95,16 @@ export function StatusManagement() {
           <label>Состояние<select value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value as Incident["status"] })}><option value="investigating">Изучаем</option><option value="monitoring">Наблюдаем</option><option value="scheduled">Запланировано</option><option value="resolved">Завершено</option></select></label>
         </div>
         <label>Затронутые сервисы<input value={draft.affectedServices.join(", ")} onChange={(event) => setDraft({ ...draft, affectedServices: event.target.value.split(",").map((item) => item.trim()).filter(Boolean) })} placeholder="Сайт, кабинет, Германия #1" /></label>
-        <label className="review-consent"><input type="checkbox" checked={draft.planned} onChange={(event) => setDraft({ ...draft, planned: event.target.checked })} /><span>Плановые технические работы</span></label>
-        <div className="moderation-actions"><button className="button button-primary" type="submit" disabled={busy}>Сохранить публикацию</button>{draft.id && <button className="button button-secondary" type="button" onClick={() => setDraft(emptyIncident())}>Отмена</button>}</div>
+        <label className="admin-checkbox"><input type="checkbox" checked={draft.planned} onChange={(event) => setDraft({ ...draft, planned: event.target.checked })} /><span>Плановые технические работы</span></label>
+        <div className="status-admin-actions"><button className="button button-primary" type="submit" disabled={busy}>Сохранить публикацию</button>{draft.id && <button className="button button-secondary" type="button" onClick={() => setDraft(emptyIncident())}>Отмена</button>}</div>
       </form>
       <div className="incident-admin-list">
-        <div className="moderation-toolbar"><h2>Все публикации</h2><button className="button button-secondary" type="button" onClick={() => void load()} disabled={busy}>Обновить</button></div>
-        {message && <p className="review-message review-message-sent" role="status">{message}</p>}
-        {incidents.map((incident) => <article className="moderation-card glass-card" key={incident.id}>
-          <div className="moderation-card-head"><strong>{incident.title}</strong><span>{incident.status}</span></div>
+        <div className="status-admin-toolbar"><h2>Все публикации</h2><button className="button button-secondary" type="button" onClick={() => void load()} disabled={busy}>Обновить</button></div>
+        {message && <p className="admin-message admin-message-sent" role="status">{message}</p>}
+        {incidents.map((incident) => <article className="status-admin-card glass-card" key={incident.id}>
+          <div className="status-admin-card-head"><strong>{incident.title}</strong><span>{incident.status}</span></div>
           <p>{incident.summary}</p>
-          <div className="moderation-actions"><button className="button button-secondary" type="button" onClick={() => setDraft(incident)}>Изменить</button>{incident.status !== "resolved" && <button className="button button-primary" type="button" onClick={() => void resolve(incident)}>Завершить</button>}</div>
+          <div className="status-admin-actions"><button className="button button-secondary" type="button" onClick={() => setDraft(incident)}>Изменить</button>{incident.status !== "resolved" && <button className="button button-primary" type="button" onClick={() => void resolve(incident)}>Завершить</button>}</div>
         </article>)}
       </div>
     </section>

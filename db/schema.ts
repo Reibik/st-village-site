@@ -23,16 +23,6 @@ export const schemaStatements = [
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   )`,
   `CREATE INDEX IF NOT EXISTS idx_incidents_starts_at ON incidents(starts_at DESC)`,
-  `CREATE TABLE IF NOT EXISTS reviews (
-    id TEXT PRIMARY KEY,
-    display_name TEXT NOT NULL,
-    rating INTEGER NOT NULL,
-    text TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'pending',
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    moderated_at TEXT
-  )`,
-  `CREATE INDEX IF NOT EXISTS idx_reviews_status_created_at ON reviews(status, created_at DESC)`,
   `CREATE TABLE IF NOT EXISTS private_metrics (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     event_type TEXT NOT NULL,

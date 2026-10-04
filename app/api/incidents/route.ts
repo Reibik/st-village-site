@@ -1,5 +1,5 @@
 import { getIncidents, saveIncident, type Incident } from "@/src/server/storage/database";
-import { checkRateLimit, rateLimitResponse, readJsonLimited } from "@/src/server/security/rate-limit";
+import { checkRateLimit, PayloadTooLargeError, rateLimitResponse, readJsonLimited } from "@/src/server/security/rate-limit";
 
 const statuses = new Set<Incident["status"]>(["investigating", "monitoring", "resolved", "scheduled"]);
 const severities = new Set<Incident["severity"]>(["info", "minor", "major"]);
@@ -32,7 +32,10 @@ export async function POST(request: Request) {
     }
     const stored = await saveIncident(incident);
     return Response.json({ incident, stored }, { status: stored ? 200 : 503 });
-  } catch {
+  } catch (error) {
+    if (error instanceof PayloadTooLargeError) return Response.json({ error: "payload too large" }, {
+      status: 413, headers: { "Cache-Control": "no-store" },
+    });
     return Response.json({ error: "invalid payload" }, { status: 400 });
   }
 }

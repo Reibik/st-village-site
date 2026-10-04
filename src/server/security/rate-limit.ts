@@ -76,10 +76,12 @@ export async function readTextLimited(request: Request, maximumBytes = 16_384): 
   }
 }
 
+export class PayloadTooLargeError extends Error {
+  constructor() { super("payload too large"); }
+}
+
 export async function readJsonLimited(request: Request, maximumBytes = 16_384) {
-  const declaredLength = Number(request.headers.get("content-length") || 0);
-  if (declaredLength > maximumBytes) throw new Error("payload too large");
-  const body = await request.text();
-  if (new TextEncoder().encode(body).byteLength > maximumBytes) throw new Error("payload too large");
+  const body = await readTextLimited(request, maximumBytes);
+  if (body instanceof Response) throw new PayloadTooLargeError();
   return JSON.parse(body) as Record<string, unknown>;
 }

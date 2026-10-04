@@ -1,4 +1,4 @@
-import { checkRateLimit, rateLimitResponse } from "@/src/server/security/rate-limit";
+import { checkRateLimit, PayloadTooLargeError, rateLimitResponse, readJsonLimited } from "@/src/server/security/rate-limit";
 import { getPrivateMetricsSummary, recordPrivateMetric } from "@/src/server/storage/database";
 
 const destinations = new Set(["cabinet", "telegram"]);
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   const rateLimit = await checkRateLimit(request, "private-analytics", 120, 15 * 60_000);
   if (!rateLimit.allowed) return rateLimitResponse(rateLimit.retryAfterSeconds);
   try {
-    const payload = await request.json() as Record<string, unknown>;
+    const payload = await readJsonLimited(request);
     if (payload.eventType === "outbound_click" && typeof payload.destination === "string" && destinations.has(payload.destination)) {
       const stored = await recordPrivateMetric({
         eventType: "outbound_click",
@@ -28,7 +28,10 @@ export async function POST(request: Request) {
       const stored = await recordPrivateMetric({ eventType: "web_vital", page: safePage(payload.page), metricName: payload.metricName, metricValue: value });
       return Response.json({ accepted: true, stored }, { status: 202 });
     }
-  } catch {
+  } catch (error) {
+    if (error instanceof PayloadTooLargeError) return Response.json({ error: "payload too large" }, {
+      status: 413, headers: { "Cache-Control": "no-store" },
+    });
     return Response.json({ error: "invalid payload" }, { status: 400 });
   }
   return Response.json({ error: "unsupported event" }, { status: 400 });

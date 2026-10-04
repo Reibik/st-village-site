@@ -1,8 +1,10 @@
-import { expect, test, type Page, type Route } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 async function prepare(page: Page) {
   await page.clock.setFixedTime(new Date("2026-08-02T04:00:00.000Z"));
-  await page.addInitScript(() => localStorage.setItem("st-theme", "dark"));
+  await page.addInitScript(() => {
+    if (!localStorage.getItem("st-theme")) localStorage.setItem("st-theme", "dark");
+  });
   await page.route("**/api/pricing", (route) => route.abort());
   await page.route("**/api/news?**", (route) => route.abort());
   await page.route("**/api/live-status", (route) => route.fulfill({ json: {
@@ -46,17 +48,6 @@ async function prepare(page: Page) {
       { id: "asia", label: "Азия", country: "JP", city: "Tokyo", status: "operational", latencyMs: 1398, checkedAt: "2026-08-02T04:00:00.000Z" },
     ],
   } }));
-  const reviewsRoute = (route: Route) => {
-    const method = route.request().method();
-    if (method === "POST") return route.fulfill({ json: { accepted: true, pendingModeration: true, stored: true, moderationNotified: true } });
-    if (method === "PATCH") return route.fulfill({ json: { updated: true } });
-    if (route.request().url().includes("status=pending")) return route.fulfill({ json: { reviews: [{
-      id: "review-1", displayName: "Тестовый клиент", rating: 5,
-      text: "Подключение работает стабильно на всех моих устройствах.", createdAt: "2026-08-02T04:00:00.000Z", status: "pending",
-    }] } });
-    return route.fulfill({ json: { reviews: [] } });
-  };
-  await page.route(/\/api\/reviews(?:\?.*)?$/, reviewsRoute);
   await page.route("**/api/analytics?**", (route) => route.fulfill({ json: {
     days: 30,
     outbound: { cabinet: 42, telegram: 17 },
@@ -126,49 +117,11 @@ test("прозрачный статус", async ({ page }) => {
   await expect(content).toHaveScreenshot("status-observability.png");
 });
 
-test("страница отзывов", async ({ page }) => {
-  await prepare(page);
-  await page.goto("/reviews", { waitUntil: "networkidle" });
-  const board = page.locator(".reviews-layout");
-  await expect(board).toBeVisible();
-  await expect(page.locator(".review-form-card")).toBeVisible();
-  await settle(page);
-  await expect(board).toHaveScreenshot("reviews-page.png");
-});
-
-test("форма отзыва показывает результат отправки", async ({ page }) => {
-  await prepare(page);
-  await page.goto("/reviews", { waitUntil: "networkidle" });
-  await page.getByLabel("Как вас представить").fill("Тест");
-  await page.getByLabel("Ваш отзыв").fill("Тестовый отзыв проверяет успешную отправку формы на модерацию.");
-  await page.locator(".review-consent input").check();
-  await page.getByRole("button", { name: "Отправить на модерацию" }).click();
-  await expect(page.locator(".review-message")).toContainText("Отзыв отправлен на модерацию");
-  await expect(page.getByLabel("Как вас представить")).toHaveValue("");
-});
-
-test("модератор может опубликовать ожидающий отзыв", async ({ page }) => {
-  await prepare(page);
-  await page.goto("/reviews/moderation", { waitUntil: "networkidle" });
-  await page.getByLabel("Токен модератора").fill("test-admin-token");
-  const pendingRequestPromise = page.waitForRequest((request) => request.url().includes("status=pending"));
-  await page.getByRole("button", { name: "Открыть модерацию" }).click();
-  const pendingRequest = await pendingRequestPromise;
-  expect(pendingRequest.headers()["x-st-village-admin-token"]).toBe("test-admin-token");
-  expect(pendingRequest.headers().authorization).toBeUndefined();
-  await expect(page.getByText("Тестовый клиент")).toBeVisible();
-  const moderationRequestPromise = page.waitForRequest((request) => request.method() === "PATCH" && request.url().includes("/api/reviews"));
-  await page.getByRole("button", { name: "Опубликовать" }).click();
-  const moderationRequest = await moderationRequestPromise;
-  expect(moderationRequest.headers()["x-st-village-admin-token"]).toBe("test-admin-token");
-  expect(moderationRequest.headers().authorization).toBeUndefined();
-  await expect(page.getByRole("status")).toContainText("Отзыв опубликован");
-  await expect(page.getByText("Тестовый клиент")).toHaveCount(0);
-});
-
 test("администратор может открыть метрики и создать публикацию статуса", async ({ page }) => {
   await prepare(page);
   await page.goto("/status/management", { waitUntil: "networkidle" });
+  await expect(page.getByRole("main")).toHaveCount(1);
+  expect(await page.locator(".status-admin-page").evaluate((element) => getComputedStyle(element).maxWidth)).toBe("980px");
   await page.getByLabel("STATUS_ADMIN_TOKEN").fill("test-status-token");
   const metricsRequestPromise = page.waitForRequest((request) => request.url().includes("/api/analytics?days=30"));
   await page.getByRole("button", { name: "Открыть управление" }).click();
@@ -182,4 +135,47 @@ test("администратор может открыть метрики и с�
   const incidentRequest = await incidentRequestPromise;
   expect(incidentRequest.headers()["x-st-village-status-token"]).toBe("test-status-token");
   await expect(page.getByRole("status")).toContainText("Публикация сохранена");
+});
+
+test("навигация без отзывов, мобильное меню и переключение темы", async ({ page }) => {
+  await prepare(page);
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto("/", { waitUntil: "networkidle" });
+  await expect(page.locator('a[href^="/reviews"]')).toHaveCount(0);
+  await page.getByRole("button", { name: "Переключить цветовую тему" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  await page.reload({ waitUntil: "networkidle" });
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+  const menu = page.getByRole("button", { name: "Открыть меню" });
+  if (await menu.isVisible()) {
+    await menu.click();
+    await expect(page.getByRole("navigation", { name: "Мобильная навигация" })).toBeVisible();
+    await expect(page.locator('#mobile-nav a[href^="/reviews"]')).toHaveCount(0);
+    await page.keyboard.press("Escape");
+    await expect(menu).toBeFocused();
+    await expect(menu).toHaveAttribute("aria-expanded", "false");
+    await menu.click();
+    await page.locator("#mobile-nav").getByRole("link", { name: "Подключение", exact: true }).click();
+    await expect(menu).toHaveAttribute("aria-expanded", "false");
+  } else {
+    await page.getByRole("navigation", { name: "Основная навигация" }).getByRole("link", { name: "Подключение", exact: true }).click();
+  }
+  await expect(page).toHaveURL(/\/connect$/);
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Happ и INCY");
+  await expect(page.locator('a[href^="/reviews"]')).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test("старые страницы отзывов закрыты, а ссылка возвращает на главную", async ({ page }) => {
+  await prepare(page);
+  for (const path of ["/reviews", "/reviews/moderation"]) {
+    const response = await page.goto(path);
+    expect(response?.status()).toBe(410);
+    expect(response?.headers()["x-robots-tag"]).toContain("noindex");
+    await expect(page.getByRole("heading", { name: "Раздел больше недоступен" })).toBeVisible();
+    await expect(page.locator("form")).toHaveCount(0);
+  }
+  await page.getByRole("link", { name: "На главную" }).click();
+  await expect(page.locator(".hero")).toBeVisible();
 });

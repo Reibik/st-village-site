@@ -40,7 +40,7 @@ def main_keyboard(base_url: str) -> InlineKeyboardMarkup:
         [button("🔄 Обновить", "site_admin_refresh"), button("🌍 Открыть сайт", url=base_url)],
         [button("🏷 Версия", "site_admin_version"), button("🚧 Техработы", "site_admin_incidents")],
         [button("📢 Объявления", "site_admin_announcements"), button("📊 Состояние", "site_admin_status")],
-        [button("⭐ Отзывы", "site_admin_reviews"), button("📈 Аналитика", "site_admin_analytics")],
+        [button("📈 Аналитика", "site_admin_analytics")],
         [button("📜 Журнал действий", "site_admin_audit")],
         [button("⬅️ Назад", "admin_panel")],
     ])
@@ -71,7 +71,7 @@ def dashboard_text(data: dict) -> str:
         f"🖥 Серверы: <b>{online} из {total}</b> онлайн\n"
         f"🚧 Активные работы: <b>{data.get('incidents', {}).get('active', 0)}</b>\n"
         f"📢 Объявления: <b>{data.get('announcements', {}).get('active', 0)}</b>\n"
-        f"⭐ Отзывы на модерации: <b>{data.get('reviews', {}).get('pending', 0)}</b>\n\n"
+        "\n"
         f"🕒 Обновлено: {fmt_time(data.get('generatedAt'))}"
     )
 
@@ -156,25 +156,6 @@ async def show_analytics(callback: types.CallbackQuery, db_user: User, db: Async
         f"✈️ Переходы в Telegram: <b>{outbound.get('telegram', 0)}</b>\n\n"
         f"<b>Core Web Vitals</b>\n{vital_lines}",
         parse_mode="HTML", reply_markup=back_keyboard(),
-    )
-    await callback.answer()
-
-
-@admin_required
-@error_handler
-async def show_reviews(callback: types.CallbackQuery, db_user: User, db: AsyncSession):
-    api = SiteAdminApi()
-    data = await edit_with_error(callback, lambda: api.dashboard(callback.from_user.id))
-    if not data:
-        return
-    count = data.get("reviews", {}).get("pending", 0)
-    moderation_url = f"{api.base_url}/reviews/moderation"
-    await callback.message.edit_text(
-        f"⭐ <b>Отзывы сайта</b>\n\nНа модерации: <b>{count}</b>\n\n"
-        "Для полной карточки отзыва откройте защищённую страницу модерации.",
-        parse_mode="HTML", reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-            [button("🔐 Открыть модерацию", url=moderation_url)], [button("⬅️ Назад", "site_admin")],
-        ]),
     )
     await callback.answer()
 
@@ -444,7 +425,6 @@ def register_handlers(dp: Dispatcher):
     dp.callback_query.register(show_version, F.data == "site_admin_version")
     dp.callback_query.register(show_status, F.data == "site_admin_status")
     dp.callback_query.register(show_analytics, F.data == "site_admin_analytics")
-    dp.callback_query.register(show_reviews, F.data == "site_admin_reviews")
     dp.callback_query.register(show_announcements, F.data == "site_admin_announcements")
     dp.callback_query.register(start_announcement, F.data == "site_admin_announcement_new")
     dp.callback_query.register(start_announcement, F.data.startswith("site_admin_announcement_kind_"))

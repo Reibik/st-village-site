@@ -9,8 +9,13 @@ check_url() {
   curl --fail --silent --show-error --location --max-time 15 "${base_url}${path}" >/dev/null
 }
 
-for path in / /pricing /connect /status /news /reviews /support /release /robots.txt /sitemap.xml /manifest.webmanifest /api/health /api/observability; do
+for path in / /pricing /connect /status /news /support /release /robots.txt /sitemap.xml /manifest.webmanifest /api/health /api/observability; do
   check_url "$path"
+done
+
+for path in /reviews /reviews/moderation /api/reviews; do
+  retired_status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' --max-time 15 "${base_url}${path}")"
+  [[ "$retired_status" == "410" ]]
 done
 
 version_payload="$(curl --fail --silent --show-error --max-time 15 "${base_url}/api/version")"

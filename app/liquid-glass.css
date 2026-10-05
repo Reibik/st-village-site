@@ -1,0 +1,167 @@
+/* Liquid Glass: decorative CSS only; solid surfaces are the default fallback. */
+:root {
+  --liquid-glass-surface: #f8fbff;
+  --liquid-glass-header: #f4f7fb;
+  --liquid-glass-filter: none;
+  --liquid-glass-blur: 18px;
+  --liquid-glass-edge: rgba(255, 255, 255, .88);
+  --liquid-glass-border: rgba(40, 77, 116, .2);
+  --liquid-glass-reflection: rgba(255, 255, 255, .62);
+  --liquid-glass-shadow: rgba(24, 60, 105, .1);
+  --liquid-glass-label: #075985;
+}
+
+:root[data-theme="dark"] {
+  --liquid-glass-surface: #141e2c;
+  --liquid-glass-header: #0b111b;
+  --liquid-glass-edge: rgba(211, 236, 255, .2);
+  --liquid-glass-border: rgba(170, 209, 247, .2);
+  --liquid-glass-reflection: rgba(202, 230, 255, .12);
+  --liquid-glass-shadow: rgba(0, 5, 15, .3);
+  --liquid-glass-label: var(--accent);
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root {
+    --liquid-glass-surface: rgba(247, 251, 255, .83);
+    --liquid-glass-header: rgba(244, 248, 255, .88);
+    --liquid-glass-filter: blur(var(--liquid-glass-blur)) saturate(145%);
+  }
+  :root[data-theme="dark"] {
+    --liquid-glass-surface: rgba(18, 29, 44, .82);
+    --liquid-glass-header: rgba(10, 17, 27, .86);
+  }
+}
+
+.site-header,
+.button-secondary,
+.theme-toggle,
+.menu-toggle,
+.signal-card,
+.cabinet-preview-frame,
+.cabinet-preview-chip,
+.price-card.tariff-card {
+  background:
+    linear-gradient(145deg, var(--liquid-glass-reflection), transparent 42%),
+    var(--liquid-glass-surface);
+  border-color: var(--liquid-glass-border);
+  box-shadow:
+    inset 0 1px 0 var(--liquid-glass-edge),
+    inset 0 -1px 0 rgba(94, 151, 213, .06),
+    0 12px 32px var(--liquid-glass-shadow);
+  -webkit-backdrop-filter: var(--liquid-glass-filter);
+  backdrop-filter: var(--liquid-glass-filter);
+}
+
+.site-header {
+  background:
+    linear-gradient(115deg, var(--liquid-glass-reflection), transparent 42%),
+    var(--liquid-glass-header);
+  border-bottom-color: var(--liquid-glass-border);
+  box-shadow: inset 0 1px 0 var(--liquid-glass-edge), 0 5px 24px var(--liquid-glass-shadow);
+}
+
+.button-primary,
+.button-secondary {
+  position: relative;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.button-primary {
+  background:
+    linear-gradient(175deg, rgba(255, 255, 255, .48), transparent 48%),
+    linear-gradient(120deg, #8be6ff, #38bdf8 52%, #82b4ff);
+  border-color: rgba(200, 241, 255, .54);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), inset 0 -2px 6px rgba(8, 87, 150, .16), 0 9px 28px rgba(14, 165, 233, .23);
+}
+
+.button-primary::before,
+.button-secondary::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 22%, rgba(255, 255, 255, .17) 46%, transparent 67%);
+  transform: translateX(-110%);
+  transition: transform .55s ease;
+}
+
+.theme-toggle,
+.menu-toggle { border-radius: 15px; }
+
+.price-card.tariff-card {
+  background:
+    radial-gradient(ellipse at 100% 0, var(--accent-soft), transparent 62%),
+    linear-gradient(145deg, var(--liquid-glass-reflection), transparent 40%),
+    var(--liquid-glass-surface);
+}
+
+.price-card.tariff-card.price-card-featured {
+  border-color: color-mix(in srgb, var(--accent) 54%, var(--liquid-glass-border));
+  box-shadow: inset 0 1px 0 var(--liquid-glass-edge), 0 15px 38px var(--liquid-glass-shadow), 0 0 24px var(--accent-soft);
+}
+
+.cabinet-preview-frame {
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--liquid-glass-border));
+  box-shadow: inset 0 1px 0 var(--liquid-glass-edge), 0 24px 65px var(--liquid-glass-shadow);
+}
+
+/* The cabinet screenshot is dark in both themes; keep its labels legible. */
+.cabinet-preview-footer { color: var(--muted); }
+.cabinet-preview-toolbar { color: var(--liquid-glass-label); }
+.cabinet-preview-footer strong,
+.cabinet-preview-toolbar strong { color: var(--liquid-glass-label); }
+.cabinet-preview-chip { color: var(--foreground); }
+.cabinet-preview-chip-secure { color: var(--liquid-glass-label); }
+
+@media (hover: hover) and (pointer: fine) {
+  .button-primary:hover::before,
+  .button-secondary:hover::before { transform: translateX(110%); }
+  .button-secondary:hover,
+  .theme-toggle:hover,
+  .menu-toggle:hover { border-color: var(--accent); }
+}
+
+@media (max-width: 680px) {
+  :root { --liquid-glass-blur: 10px; }
+  /* Remain stronger than the page stylesheet regardless of load order. */
+  .orbital-home .hero .hero-actions .button-secondary {
+    min-height: 42px;
+    border-color: var(--liquid-glass-border);
+    background: linear-gradient(145deg, var(--liquid-glass-reflection), transparent 42%), var(--liquid-glass-surface);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root { --liquid-glass-filter: none; --liquid-glass-surface: #f8fbff; --liquid-glass-header: #f4f7fb; }
+  :root[data-theme="dark"] { --liquid-glass-surface: #141e2c; --liquid-glass-header: #0b111b; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button-primary,
+  .button-secondary,
+  .button-primary:hover,
+  .button-secondary:hover,
+  .button-primary::before,
+  .button-secondary::before { transition: none; transform: none; }
+  .button-primary::before,
+  .button-secondary::before { display: none; }
+}
+
+@media (forced-colors: active) {
+  :root { --liquid-glass-filter: none; --liquid-glass-surface: Canvas; --liquid-glass-header: Canvas; }
+  :root[data-theme="dark"] { --liquid-glass-surface: Canvas; --liquid-glass-header: Canvas; }
+  .site-header,
+  .button-primary,
+  .button-secondary,
+  .theme-toggle,
+  .menu-toggle,
+  .signal-card,
+  .cabinet-preview-frame,
+  .cabinet-preview-chip,
+  .price-card.tariff-card { background: Canvas; border-color: CanvasText; box-shadow: none; }
+  .button-primary::before,
+  .button-secondary::before { display: none; }
+}

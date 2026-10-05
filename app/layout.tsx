@@ -6,6 +6,7 @@ import { UpdateNotice } from "@/src/components/update-notice";
 import { SiteAnnouncements } from "@/src/components/site-announcements";
 import { createPageMetadata, DEFAULT_DESCRIPTION, DEFAULT_TITLE, rootJsonLd, SITE_NAME, SITE_URL } from "@/src/config/seo";
 import "./globals.css";
+import "./liquid-glass.css";
 
 const homeMetadata = createPageMetadata({ title: DEFAULT_TITLE, description: DEFAULT_DESCRIPTION, path: "/" });
 const BRAND_ICON_VERSION = "2";

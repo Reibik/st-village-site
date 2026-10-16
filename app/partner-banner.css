@@ -1,0 +1,86 @@
+/* Scoped draft promotion. No external assets, scripts or payment-brand logos. */
+.partner-banner {
+  --partner-accent: #5b36c8;
+  --partner-tint: rgba(109, 74, 220, .07);
+  margin-top: 6px;
+  margin-bottom: 34px;
+}
+:root[data-theme="dark"] .partner-banner { --partner-accent: #c4b5fd; --partner-tint: rgba(139, 92, 246, .12); }
+.partner-banner-panel {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid color-mix(in srgb, var(--partner-accent) 26%, var(--line));
+  border-radius: 28px;
+  background: radial-gradient(ellipse at 100% 0, var(--partner-tint), transparent 65%), var(--liquid-glass-surface);
+  box-shadow: inset 0 1px 0 var(--liquid-glass-edge), 0 16px 48px var(--liquid-glass-shadow);
+  -webkit-backdrop-filter: var(--liquid-glass-filter);
+  backdrop-filter: var(--liquid-glass-filter);
+}
+.partner-banner-body { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, .9fr); align-items: center; gap: 36px; padding: 38px 42px 26px; }
+.partner-banner-copy { min-width: 0; }
+.partner-banner-brand { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.partner-banner-brand strong { font-size: 15px; letter-spacing: -.025em; }
+.partner-brand-symbol { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 9px; background: var(--partner-tint); border: 1px solid color-mix(in srgb, var(--partner-accent) 25%, transparent); color: var(--partner-accent); font-size: 21px; }
+.partner-launch-badge { padding: 3px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 10px; font-weight: 650; }
+.partner-banner h2 { max-width: 570px; margin: 21px 0 14px; font-size: clamp(27px, 2.9vw, 37px); line-height: 1.13; letter-spacing: -.045em; font-weight: 750; }
+.partner-banner h2 span { color: var(--partner-accent); }
+.partner-banner-lead { max-width: 470px; margin: 0; color: var(--muted); font-size: 14px; line-height: 1.75; }
+.partner-use-cases { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 0; margin: 17px 0 23px; list-style: none; }
+.partner-use-cases li { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; color: var(--muted); }
+.partner-use-cases li::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: var(--partner-accent); }
+.partner-banner-action { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
+.partner-banner .partner-cta-soon { min-height: 46px; padding-inline: 19px; border-radius: 999px; background: linear-gradient(125deg, var(--accent-soft), var(--partner-tint)); border-color: color-mix(in srgb, var(--partner-accent) 28%, var(--line)); color: var(--foreground); box-shadow: inset 0 1px 0 var(--liquid-glass-edge); cursor: not-allowed; transform: none; }
+.partner-cta-soon span { padding-left: 10px; border-left: 1px solid var(--line); color: var(--muted); font-size: 10px; }
+.partner-banner-caption { font-size: 10px; line-height: 1.6; color: var(--muted); }
+.partner-banner-visual { position: relative; min-height: 260px; min-width: 0; display: grid; place-items: center; pointer-events: none; }
+.partner-card-orbit { position: absolute; width: min(100%, 390px); height: 150px; border: 1px solid color-mix(in srgb, var(--partner-accent) 23%, transparent); border-radius: 50%; }
+.partner-card-orbit-one { transform: rotate(-22deg); }
+.partner-card-orbit-two { transform: rotate(29deg); width: min(95%, 345px); height: 235px; opacity: .5; }
+.partner-payment-card { position: absolute; width: min(80%, 306px); aspect-ratio: 1.64; border-radius: 20px; }
+.partner-payment-card-back { transform: translate(18px, -18px) rotate(9deg); border: 1px solid color-mix(in srgb, var(--partner-accent) 28%, transparent); background: linear-gradient(135deg, var(--partner-tint), var(--accent-soft)); }
+.partner-payment-card-front { display: flex; flex-direction: column; padding: 22px; transform: perspective(950px) rotateY(-12deg) rotateZ(-7deg); border: 1px solid rgba(207, 219, 255, .6); color: #f8fafc; background: radial-gradient(ellipse at 100% 0, rgba(107, 162, 255, .7), transparent 66%), linear-gradient(125deg, #112d70, #392775 65%, #6240a4); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 22px 40px rgba(28, 32, 91, .24); transition: transform .4s ease; overflow: hidden; }
+.partner-payment-card-front::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(120deg, transparent 24%, rgba(255, 255, 255, .13), transparent 68%); }
+.partner-card-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; font-weight: 700; letter-spacing: -.02em; }
+.partner-card-arrow { font-size: 24px; font-weight: 400; }
+.partner-card-chip { display: flex; align-items: center; width: 33px; height: 25px; margin-top: 10px; border: 1px solid rgba(255, 255, 255, .55); border-radius: 7px; background: linear-gradient(125deg, rgba(255, 255, 255, .3), rgba(255, 255, 255, .07)); }
+.partner-card-chip i { flex: 1; height: 100%; border-right: 1px solid rgba(255, 255, 255, .3); }.partner-card-chip i:last-child { border: 0; }
+.partner-card-number { margin-top: auto; padding-top: 12px; font-size: 12px; letter-spacing: .09em; }
+.partner-card-bottom { margin-top: 10px; display: flex; justify-content: space-between; gap: 8px; font-size: 9px; letter-spacing: .025em; }
+.partner-card-bottom > span:last-child { padding: 1px 5px; border: 1px solid rgba(255, 255, 255, .35); border-radius: 4px; font-size: 8px; }
+.partner-visual-label { position: absolute; bottom: -3px; text-align: center; font-size: 10px; line-height: 1.65; letter-spacing: .02em; color: var(--muted); }.partner-visual-label span { display: block; }
+.partner-banner-details { margin: 0 42px; border-top: 1px solid var(--line); }
+.partner-banner-details summary { width: fit-content; display: flex; align-items: center; gap: 25px; min-height: 46px; padding-block: 12px; color: var(--partner-accent); font-size: 12px; font-weight: 650; list-style: none; cursor: pointer; }
+.partner-banner-details summary::-webkit-details-marker { display: none; }
+.partner-banner-details summary > span { font-size: 19px; line-height: 1; }.partner-banner-details[open] summary > span { transform: rotate(45deg); }
+.partner-banner-explanation { padding-bottom: 8px; font-size: 12px; color: var(--muted); line-height: 1.8; }
+.partner-banner-explanation ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; padding-left: 18px; margin: 0 0 12px; }.partner-banner-explanation li { padding-left: 2px; }.partner-banner-explanation li::marker { color: var(--partner-accent); }
+.partner-banner-explanation p { margin: 0; font-size: 11px; }
+.partner-launch-note { margin: 0; padding: 0 42px 22px; font-size: 10px; line-height: 1.6; color: var(--muted); }
+@media (hover: hover) and (pointer: fine) { .partner-banner-panel:hover .partner-payment-card-front { transform: perspective(950px) rotateY(-4deg) rotateZ(-4deg) translateY(-4px); } }
+@media (max-width: 980px) {
+  .partner-banner-body { padding: 30px 28px 22px; gap: 20px; grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr); }
+  .partner-payment-card { width: 86%; }.partner-payment-card-front { padding: 16px; }
+  .partner-card-top { font-size: 12px; }.partner-card-number { font-size: 10px; letter-spacing: .03em; }
+  .partner-banner-details { margin-inline: 28px; }.partner-launch-note { padding-inline: 28px; }
+}
+@media (max-width: 680px) {
+  .partner-banner { margin-top: 6px; margin-bottom: 20px; }
+  .partner-banner-panel { border-radius: 22px; }
+  .partner-banner-body { display: flex; flex-direction: column; align-items: stretch; padding: 25px 22px 14px; gap: 17px; }
+  .partner-banner h2 { font-size: 29px; line-height: 1.16; margin-top: 18px; }
+  .partner-banner-lead { font-size: 13px; }
+  .partner-banner-action { gap: 13px; }.partner-banner .partner-cta-soon { padding-inline: 14px; font-size: 12px; min-height: 44px; }.partner-banner-caption { font-size: 9px; }
+  .partner-banner-visual { min-height: 210px; }.partner-payment-card { width: min(78%, 240px); border-radius: 16px; }.partner-payment-card-front { padding: 15px; }
+  .partner-card-orbit { height: 125px; }.partner-card-orbit-two { height: 180px; }
+  .partner-visual-label { bottom: -2px; font-size: 9px; line-height: 1.4; }.partner-visual-label span { display: inline; }
+  .partner-card-chip { width: 29px; height: 20px; margin-top: 6px; }.partner-card-number { padding-top: 8px; }.partner-card-bottom { margin-top: 6px; font-size: 8px; }
+  .partner-banner-details { margin-inline: 22px; }.partner-launch-note { padding: 0 22px 20px; }
+  .partner-banner-explanation ol { grid-template-columns: 1fr; gap: 8px; }
+}
+@media (prefers-reduced-motion: reduce) { .partner-banner .partner-payment-card-front { transition: none; transform: none; } }
+@media (forced-colors: active) {
+  .partner-banner-panel { background: Canvas; border-color: CanvasText; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .partner-banner-body { grid-template-columns: 1fr; }.partner-banner-visual { display: none; }
+  .partner-banner h2 span,.partner-banner-details summary { color: LinkText; }
+  .partner-banner .partner-cta-soon { background: Canvas; color: GrayText; border-color: GrayText; box-shadow: none; }
+}

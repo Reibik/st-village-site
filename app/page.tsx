@@ -4,6 +4,7 @@ import { CountryFlag } from "@/src/components/country-flag";
 import { FaqList } from "@/src/components/faq-list";
 import { SectionHeading } from "@/src/components/section-heading";
 import { PlatformStrip } from "@/src/components/platform-strip";
+import { PartnerBanner } from "@/src/components/partner-banner";
 import { TelegramNewsFeed } from "@/src/features/news/telegram-news-feed";
 import { PricingCatalog } from "@/src/features/pricing/pricing-catalog";
 import { HomeNetworkShowcase } from "@/src/features/status/home-network-showcase";
@@ -11,6 +12,7 @@ import { homeFaqs } from "@/src/config/content";
 import { CABINET_URL, TELEGRAM_BOT_URL } from "@/src/config/links";
 import { createFaqJsonLd, serializeJsonLd } from "@/src/config/structured-data";
 import "./orbital-home.css";
+import "./partner-banner.css";
 
 const steps = [
   { title: "Активируйте доступ", text: "Войдите в кабинет и выберите пробный период или подходящий тариф.", href: CABINET_URL, action: "Открыть кабинет", external: true, symbol: "↗" },
@@ -52,6 +54,7 @@ export default function Home() {
       </div>
     </section>
 
+    <PartnerBanner />
     <PlatformStrip />
     <div className="section-shell orbit-proof"><a href="/status"><span aria-hidden="true">◎</span> Открытый мониторинг</a><a href="/connect"><span aria-hidden="true">↗</span> Инструкции для 6 платформ</a><a href="/support"><span aria-hidden="true">◇</span> Поддержка рядом</a></div>
 

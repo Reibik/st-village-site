@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { HolidayHeroAccent } from "@/src/features/holidays/holiday-surfaces";
 import { CtaPanel } from "@/src/components/cta-panel";
 import { CountryFlag } from "@/src/components/country-flag";
 import { FaqList } from "@/src/components/faq-list";
@@ -40,6 +41,7 @@ export default function Home() {
         </aside>
       </div>
       <div className="hero-visual" aria-label="Фирменная орбита ST VILLAGE">
+        <HolidayHeroAccent />
         <span className="hero-visual-coordinate" aria-hidden="true">ST / DIGITAL CONNECTION</span>
         <div className="hero-orbit orbit-one" aria-hidden="true" />
         <div className="hero-orbit orbit-two" aria-hidden="true" />

@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 async function prepare(page: Page) {
+  await page.clock.setFixedTime(new Date("2026-10-18T12:00:00Z"));
   await page.addInitScript(() => localStorage.setItem("st-theme", "dark"));
   await page.route("https://code.jivo.ru/**", (route) => route.abort());
   await page.route("**/api/news?**", (route) => route.fulfill({ json: { posts: [], hasMore: false, nextBefore: null } }));

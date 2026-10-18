@@ -4,9 +4,12 @@ import { SiteHeader } from "@/src/components/site-header";
 import { SiteObservability } from "@/src/components/site-observability";
 import { UpdateNotice } from "@/src/components/update-notice";
 import { SiteAnnouncements } from "@/src/components/site-announcements";
+import { HolidayProvider } from "@/src/features/holidays/holiday-provider";
+import { HolidayEdgeEffects } from "@/src/features/holidays/holiday-surfaces";
 import { createPageMetadata, DEFAULT_DESCRIPTION, DEFAULT_TITLE, rootJsonLd, SITE_NAME, SITE_URL } from "@/src/config/seo";
 import "./globals.css";
 import "./liquid-glass.css";
+import "./holiday-orbits.css";
 
 const homeMetadata = createPageMetadata({ title: DEFAULT_TITLE, description: DEFAULT_DESCRIPTION, path: "/" });
 const BRAND_ICON_VERSION = "2";
@@ -58,10 +61,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <a className="skip-link" href="#main-content">Перейти к содержанию</a>
         <div className="site-noise" aria-hidden="true" />
+        <HolidayProvider>
+        <HolidayEdgeEffects />
         <SiteHeader />
         <SiteAnnouncements />
         <main id="main-content">{children}</main>
         <SiteFooter />
+        </HolidayProvider>
         <UpdateNotice />
         <SiteObservability />
         <script src="https://code.jivo.ru/widget/XE01HgWxWf" async />

@@ -20,6 +20,23 @@ const env = {
 };
 const context = { waitUntil() {}, passThroughOnException() {} };
 
+test("production denies holiday preview even with forged origins and headers", async () => {
+  for (const origin of ["https://stvillage.top", "https://dev.stvillage.ru"]) {
+    const response = await worker.fetch(new Request(`${origin}/preview/holidays?theme=winter`, { headers: { accept: "text/html", host: "dev.stvillage.ru", "x-forwarded-host": "dev.stvillage.ru", cookie: "st-holiday-effects=on" } }), env, context);
+    assert.equal(response.status, 404);
+    assert.doesNotMatch(await response.text(), /data-holiday-preview=/);
+  }
+});
+
+test("server rendering never emits seasonal decoration before the preference is known", async () => {
+  const response = await worker.fetch(new Request("http://localhost/"), env, context);
+  const html = await response.text();
+  assert.doesNotMatch(html, /data-holiday-surface=/);
+  assert.match(html, /Праздничное оформление/);
+  const sitemap = await worker.fetch(new Request("http://localhost/sitemap.xml"), env, context);
+  assert.doesNotMatch(await sitemap.text(), /preview\/holidays/);
+});
+
 async function signedBotRequest(path, options = {}) {
   const method = options.method ?? "GET";
   const body = options.body ?? "";

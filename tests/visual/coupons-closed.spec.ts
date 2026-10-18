@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 
+test.beforeEach(async ({ page }) => { await page.clock.setFixedTime(new Date("2026-10-18T12:00:00Z")); });
+
 test("купоны недоступны в меню и футере, прямой адрес показывает только Скоро", async ({ page, request }) => {
   await page.addInitScript(() => localStorage.setItem("st-theme", "dark"));
   await page.route("**/api/pricing", (route) => route.abort());

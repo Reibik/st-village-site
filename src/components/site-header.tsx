@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { CABINET_URL } from "@/src/config/links";
 import { CouponsComingSoon } from "@/src/components/coupons-coming-soon";
+import { HolidayLogoAccent } from "@/src/features/holidays/holiday-surfaces";
 
 const navItems = [
   ["Возможности", "/#features"], ["Тарифы", "/pricing"], ["Купоны", "/coupons"], ["Подключение", "/connect"], ["Статус", "/status"], ["Поддержка", "/support"],
@@ -42,7 +43,7 @@ export function SiteHeader() {
     <header className="site-header">
       <div className="section-shell nav-shell">
         <Link className="brand" href="/" aria-label="ST VILLAGE — главная">
-          <span className="brand-mark">ST</span><span className="brand-copy"><strong>ST VILLAGE</strong><small>ТЕХНОЛОГИИ • СЕРВИСЫ</small></span>
+          <span className="brand-mark">ST</span><HolidayLogoAccent /><span className="brand-copy"><strong>ST VILLAGE</strong><small>ТЕХНОЛОГИИ • СЕРВИСЫ</small></span>
         </Link>
         <nav className="main-nav" aria-label="Основная навигация">{navItems.map(([label, href]) => href === "/coupons" ? <CouponsComingSoon key={href} /> : <Link href={href} key={href} aria-current={isCurrent(href)}>{label}</Link>)}</nav>
         <div className="nav-actions">

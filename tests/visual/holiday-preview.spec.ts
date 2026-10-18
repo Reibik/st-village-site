@@ -29,3 +29,20 @@ test("preview honours reduced motion and forced colours", async ({ page }) => {
   await expect(page.locator("[data-holiday-surface]:visible")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Зима", exact: true })).toBeVisible();
 });
+
+test("preview pauses decoration when the tab is hidden and resumes on return", async ({ page }) => {
+  await prepareHoliday(page); await page.goto("/preview/holidays");
+  await page.getByRole("button", { name: "Зима", exact: true }).click();
+  await page.evaluate(() => {
+    Object.defineProperty(document, "hidden", { configurable: true, get: () => true });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  const scene = page.locator('[data-holiday-preview] [data-holiday-surface="hero"]');
+  await expect(scene).toHaveAttribute("data-paused", "true");
+  expect(await scene.locator("[data-holiday-particle]").first().evaluate((node) => getComputedStyle(node).animationPlayState)).toBe("paused");
+  await page.evaluate(() => {
+    Object.defineProperty(document, "hidden", { configurable: true, get: () => false });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(scene).toHaveAttribute("data-paused", "false");
+});

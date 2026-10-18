@@ -75,3 +75,18 @@ test("no JavaScript leaves the original content and cabinet link usable without 
     await expect(page.locator('[data-holiday-surface]')).toHaveCount(0);
   } finally { await context.close(); }
 });
+
+test("edge decorations stay outside the content gutters at tablet and desktop widths", async ({ page }) => {
+  await prepareHoliday(page); await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  await expect(page.locator('[data-holiday-surface="hero"]')).toBeVisible();
+  for (const width of [680, 681, 760, 800, 980, 1024, 1180, 1220, 1280, 1440, 1920]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.evaluate(() => window.scrollTo(0, 600));
+    const content = (await page.locator(".hero").boundingBox())!;
+    for (const particle of await page.locator('[data-holiday-surface="edges"] [data-holiday-particle]:visible').all()) {
+      const box = (await particle.boundingBox())!;
+      expect(box.x + box.width <= content.x || box.x >= content.x + content.width, `particle overlaps content at ${width}px: ${JSON.stringify(box)}`).toBe(true);
+    }
+  }
+});

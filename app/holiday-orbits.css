@@ -30,6 +30,8 @@
   .holiday-hero .holiday-particle { width: 14px; height: 14px; }
   .holiday-symbol-satellite { width: 24px !important; height: 24px !important; }
 }
+/* Intermediate layouts have only 20px gutters: keep the hero scene, not edge particles over copy. */
+@media (min-width: 681px) and (max-width: 1279px) { .holiday-edges { display: none; } }
 .holiday-toggle { display: inline-flex; align-items: center; gap: 6px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--muted); font: inherit; font-size: 10px; cursor: pointer; text-align: left; }
 .holiday-toggle:hover { color: var(--text); border-color: var(--accent); }
 .holiday-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }

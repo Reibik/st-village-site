@@ -1,6 +1,5 @@
-// Draft placement: keep null until the owner supplies the partner application link.
-// Never substitute the provider's homepage: those visits would not be attributed.
+// Owner-supplied partner URL. Keep its attribution parameters on every transition.
 export const PLATI_PO_MIRU: { name: string; applicationUrl: string | null } = {
   name: "Плати по Миру",
-  applicationUrl: null,
+  applicationUrl: "https://platipomiru.com/?utm_source=stvillage&utm_medium=cpa",
 };

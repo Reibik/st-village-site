@@ -10,7 +10,7 @@ async function prepare(page: Page) {
   await page.route("**/api/version**", (route) => route.fulfill({ json: { version: "1.3.0", updateAvailable: false } }));
 }
 
-test("партнёрский анонс заметен после первого экрана, но не отправляет клиента без партнёрской ссылки", async ({ page }) => {
+test("партнёрский баннер активен и сохраняет атрибуцию без фоновых запросов к партнёру", async ({ page }) => {
   await prepare(page);
   const partnerRequests: string[] = [];
   page.on("request", (request) => {
@@ -20,9 +20,12 @@ test("партнёрский анонс заметен после первого
   const banner = page.getByRole("region", { name: "Плати по Миру" });
   await expect(banner).toBeVisible();
   await expect(banner.getByRole("heading", { name: "Зарубежные подписки и покупки — больше возможностей." })).toBeVisible();
-  await expect(banner.getByRole("button", { name: /Получить карту/ })).toBeDisabled();
-  await expect(banner.locator("a")).toHaveCount(0);
-  await expect(banner).toContainText("Скоро");
+  const applicationLink = banner.getByRole("link", { name: /Получить карту/ });
+  await expect(applicationLink).toHaveAttribute("href", "https://platipomiru.com/?utm_source=stvillage&utm_medium=cpa");
+  await expect(applicationLink).toHaveAttribute("target", "_blank");
+  for (const token of ["sponsored", "noopener", "noreferrer"]) await expect(applicationLink).toHaveAttribute("rel", new RegExp(`\\b${token}\\b`));
+  await expect(banner).not.toContainText("Скоро");
+  await expect(banner).toContainText("Партнёрский сервис");
   expect(await banner.evaluate((element) => {
     const hero = document.querySelector(".hero")!;
     const features = document.querySelector("#features")!;
@@ -43,7 +46,7 @@ test("описание раскрывается и закрывается кла
   await summary.focus();
   await page.keyboard.press("Enter");
   await expect(explanation).toBeVisible();
-  await expect(banner.getByText("Партнёрский запуск готовится. Ссылку на оформление добавим позже.", { exact: true })).toBeVisible();
+  await expect(banner.getByText("Оформление и обслуживание — на стороне провайдера.", { exact: true })).toBeVisible();
   await page.keyboard.press("Enter");
   await expect(explanation).toBeHidden();
   await expect(page).toHaveURL("/");
@@ -74,13 +77,13 @@ test("открытое до загрузки JavaScript описание сох�
   expect(errors.filter((message) => /hydration|hydrated|didn't match/i.test(message))).toEqual([]);
 });
 
-test("описание и заглушка доступны даже с отключённым JavaScript", async ({ browser }) => {
+test("описание и партнёрская ссылка доступны даже с отключённым JavaScript", async ({ browser }) => {
   const context = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
   try {
     const page = await context.newPage();
     await page.goto("http://127.0.0.1:4173/");
     const banner = page.getByRole("region", { name: "Плати по Миру" });
-    await expect(banner.getByRole("button", { name: /Получить карту/ })).toBeDisabled();
+    await expect(banner.getByRole("link", { name: /Получить карту/ })).toHaveAttribute("href", "https://platipomiru.com/?utm_source=stvillage&utm_medium=cpa");
     await banner.locator("summary").click();
     await expect(banner.getByText("Выберите карту и ознакомьтесь с условиями сервиса.", { exact: true })).toBeVisible();
   } finally { await context.close(); }
@@ -102,7 +105,7 @@ test("баннер читаем в обеих темах и не выходит 
   await summary.click();
   await expect(banner.getByText("Выберите карту и ознакомьтесь с условиями сервиса.", { exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  for (const control of [banner, banner.getByRole("heading"), banner.getByRole("button", { name: /Получить карту/ }), summary, banner.locator(".partner-banner-explanation")]) {
+  for (const control of [banner, banner.getByRole("heading"), banner.getByRole("link", { name: /Получить карту/ }), summary, banner.locator(".partner-banner-explanation")]) {
     const box = await control.boundingBox();
     expect(box).not.toBeNull();
     expect(box!.x).toBeGreaterThanOrEqual(0);
@@ -123,7 +126,22 @@ test("режимы уменьшенной прозрачности и высок
   expect(await banner.locator(".partner-banner-panel").evaluate((element) => getComputedStyle(element).backdropFilter)).toBe("none");
   await page.emulateMedia({ forcedColors: "active" });
   await expect(banner.getByRole("heading")).toBeVisible();
-  await expect(banner.getByRole("button", { name: /Получить карту/ })).toBeDisabled();
+  await expect(banner.getByRole("link", { name: /Получить карту/ })).toHaveAttribute("href", "https://platipomiru.com/?utm_source=stvillage&utm_medium=cpa");
   await banner.locator("summary").click();
   await expect(banner.getByText("Выберите карту и ознакомьтесь с условиями сервиса.", { exact: true })).toBeVisible();
+});
+
+test("переход открывает точную партнёрскую ссылку в новой вкладке без доступа к исходной", async ({ page, context }) => {
+  await prepare(page);
+  // Intercept the destination to test navigation without recording a real partner visit.
+  await context.route("https://platipomiru.com/**", (route) => route.fulfill({ status: 200, contentType: "text/html", body: "<!doctype html><title>Partner destination</title>" }));
+  await page.goto("/");
+  const opened = page.waitForEvent("popup");
+  await page.getByRole("region", { name: "Плати по Миру" }).getByRole("link", { name: /Получить карту/ }).click();
+  const popup = await opened;
+  await popup.waitForLoadState("domcontentloaded");
+  expect(popup.url()).toBe("https://platipomiru.com/?utm_source=stvillage&utm_medium=cpa");
+  expect(await popup.evaluate(() => window.opener === null)).toBe(true);
+  await expect(page).toHaveURL("/");
+  await popup.close();
 });

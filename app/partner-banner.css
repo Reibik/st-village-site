@@ -3,7 +3,7 @@
   --partner-accent: #5b36c8;
   --partner-tint: rgba(109, 74, 220, .07);
   margin-top: 6px;
-  margin-bottom: 34px;
+  margin-bottom: 56px;
 }
 :root[data-theme="dark"] .partner-banner { --partner-accent: #c4b5fd; --partner-tint: rgba(139, 92, 246, .12); }
 .partner-banner-panel {
@@ -26,12 +26,12 @@
 .partner-banner h2 span { color: var(--partner-accent); }
 .partner-banner-lead { max-width: 470px; margin: 0; color: var(--muted); font-size: 14px; line-height: 1.75; }
 .partner-use-cases { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 0; margin: 17px 0 23px; list-style: none; }
-.partner-use-cases li { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; color: var(--muted); }
+.partner-use-cases li { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); }
 .partner-use-cases li::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: var(--partner-accent); }
 .partner-banner-action { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
 .partner-banner .partner-cta-soon { min-height: 46px; padding-inline: 19px; border-radius: 999px; background: linear-gradient(125deg, var(--accent-soft), var(--partner-tint)); border-color: color-mix(in srgb, var(--partner-accent) 28%, var(--line)); color: var(--foreground); box-shadow: inset 0 1px 0 var(--liquid-glass-edge); cursor: not-allowed; transform: none; }
 .partner-cta-soon span { padding-left: 10px; border-left: 1px solid var(--line); color: var(--muted); font-size: 10px; }
-.partner-banner-caption { font-size: 10px; line-height: 1.6; color: var(--muted); }
+.partner-banner-caption { font-size: 12px; line-height: 1.6; color: var(--muted); }
 .partner-banner-visual { position: relative; min-height: 260px; min-width: 0; display: grid; place-items: center; pointer-events: none; }
 .partner-card-orbit { position: absolute; width: min(100%, 390px); height: 150px; border: 1px solid color-mix(in srgb, var(--partner-accent) 23%, transparent); border-radius: 50%; }
 .partner-card-orbit-one { transform: rotate(-22deg); }
@@ -54,8 +54,8 @@
 .partner-banner-details summary > span { font-size: 19px; line-height: 1; }.partner-banner-details[open] summary > span { transform: rotate(45deg); }
 .partner-banner-explanation { padding-bottom: 8px; font-size: 12px; color: var(--muted); line-height: 1.8; }
 .partner-banner-explanation ol { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; padding-left: 18px; margin: 0 0 12px; }.partner-banner-explanation li { padding-left: 2px; }.partner-banner-explanation li::marker { color: var(--partner-accent); }
-.partner-banner-explanation p { margin: 0; font-size: 11px; }
-.partner-launch-note { margin: 0; padding: 0 42px 22px; font-size: 10px; line-height: 1.6; color: var(--muted); }
+.partner-banner-explanation p { margin: 0; font-size: 12px; }
+.partner-launch-note { margin: 0; padding: 0 42px 22px; font-size: 12px; line-height: 1.6; color: var(--muted); }
 @media (hover: hover) and (pointer: fine) { .partner-banner-panel:hover .partner-payment-card-front { transform: perspective(950px) rotateY(-4deg) rotateZ(-4deg) translateY(-4px); } }
 @media (max-width: 980px) {
   .partner-banner-body { padding: 30px 28px 22px; gap: 20px; grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr); }
@@ -64,12 +64,12 @@
   .partner-banner-details { margin-inline: 28px; }.partner-launch-note { padding-inline: 28px; }
 }
 @media (max-width: 680px) {
-  .partner-banner { margin-top: 6px; margin-bottom: 20px; }
+  .partner-banner { margin-top: 6px; margin-bottom: 36px; }
   .partner-banner-panel { border-radius: 22px; }
   .partner-banner-body { display: flex; flex-direction: column; align-items: stretch; padding: 25px 22px 14px; gap: 17px; }
   .partner-banner h2 { font-size: 29px; line-height: 1.16; margin-top: 18px; }
   .partner-banner-lead { font-size: 13px; }
-  .partner-banner-action { gap: 13px; }.partner-banner .partner-cta-soon { padding-inline: 14px; font-size: 12px; min-height: 44px; }.partner-banner-caption { font-size: 9px; }
+  .partner-banner-action { gap: 13px; }.partner-banner .partner-cta-soon { padding-inline: 14px; font-size: 12px; min-height: 44px; }
   .partner-banner-visual { min-height: 210px; }.partner-payment-card { width: min(78%, 240px); border-radius: 16px; }.partner-payment-card-front { padding: 15px; }
   .partner-card-orbit { height: 125px; }.partner-card-orbit-two { height: 180px; }
   .partner-visual-label { bottom: -2px; font-size: 9px; line-height: 1.4; }.partner-visual-label span { display: inline; }

@@ -29,8 +29,10 @@ test("партнёрский баннер активен и сохраняет �
   expect(await banner.evaluate((element) => {
     const hero = document.querySelector(".hero")!;
     const features = document.querySelector("#features")!;
-    return Boolean(hero.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING)
-      && Boolean(element.compareDocumentPosition(features) & Node.DOCUMENT_POSITION_FOLLOWING);
+    const onboarding = document.querySelector("#getting-started")!;
+    return Boolean(hero.compareDocumentPosition(features) & Node.DOCUMENT_POSITION_FOLLOWING)
+      && Boolean(features.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING)
+      && Boolean(element.compareDocumentPosition(onboarding) & Node.DOCUMENT_POSITION_FOLLOWING);
   })).toBe(true);
   expect(partnerRequests).toEqual([]);
   await expect(page.locator(".hero-actions .button-primary")).toHaveAttribute("href", "https://cabinet.stvillage.top");

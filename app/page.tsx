@@ -35,6 +35,7 @@ export default function Home() {
           <a className="button button-secondary" href="/connect">Как подключиться <span aria-hidden="true">→</span></a>
         </div>
         <aside className="hero-trial" aria-label="Пробный период">
+          <div className="hero-trial-heading">Знакомство с ST VILLAGE</div>
           <div className="hero-trial-limits"><span><strong>1</strong><span>день доступа</span></span><span><strong>5 ГБ</strong><span>трафика</span></span><span><strong>1</strong><span>устройство</span></span></div>
           <div className="hero-trial-countries"><span>Локации:</span><span><CountryFlag code="DE" />Германия</span><span><CountryFlag code="PL" />Польша</span><span><CountryFlag code="SE" />Швеция</span></div>
           <p>Белые списки не входят в пробный период — доступны на платных тарифах.</p>
@@ -42,7 +43,6 @@ export default function Home() {
       </div>
       <div className="hero-visual" aria-label="Фирменная орбита ST VILLAGE">
         <HolidayHeroAccent />
-        <span className="hero-visual-coordinate" aria-hidden="true">ST / DIGITAL CONNECTION</span>
         <div className="hero-orbit orbit-one" aria-hidden="true" />
         <div className="hero-orbit orbit-two" aria-hidden="true" />
         <div className="logo-halo" aria-hidden="true" />
@@ -52,11 +52,9 @@ export default function Home() {
           <Image src="/brand-emblem.png" alt="Эмблема ST VILLAGE с фирменным роботом" width="1080" height="1080" loading="eager" fetchPriority="high" unoptimized sizes="(max-width: 680px) 88vw, 480px" />
         </picture>
         <div className="signal-card signal-card-bottom"><span className="signal-icon" aria-hidden="true">⌁</span><div><small>Два приложения. Один доступ.</small><strong>Happ <span> / </span> INCY</strong></div></div>
-        <span className="hero-visual-caption" aria-hidden="true">ТЕХНОЛОГИИ · СЕРВИСЫ · ВОЗМОЖНОСТИ</span>
       </div>
     </section>
 
-    <PartnerBanner />
     <PlatformStrip />
     <div className="section-shell orbit-proof"><a href="/status"><span aria-hidden="true">◎</span> Открытый мониторинг</a><a href="/connect"><span aria-hidden="true">↗</span> Инструкции для 6 платформ</a><a href="/support"><span aria-hidden="true">◇</span> Поддержка рядом</a></div>
 
@@ -66,9 +64,9 @@ export default function Home() {
         <h2 id="capabilities-title">Всё под рукой.<br /><span>Без лишних действий.</span></h2>
         <p>Подписка, устройства и баланс — в одном кабинете. Сайт помогает начать, а кабинет остаётся вашим центром управления.</p>
         <ul className="orbit-benefits">
-          <li><span aria-hidden="true">01</span><div><strong>Подписка под контролем</strong><p>Трафик, срок действия и продление в одном месте.</p></div></li>
-          <li><span aria-hidden="true">02</span><div><strong>Ваши устройства</strong><p>Добавляйте подключение по понятной инструкции.</p></div></li>
-          <li><span aria-hidden="true">03</span><div><strong>Удобный выбор</strong><p>Пользуйтесь кабинетом или связанным Telegram-ботом.</p></div></li>
+          <li><span aria-hidden="true">✓</span><div><strong>Подписка под контролем</strong><p>Трафик, срок действия и продление в одном месте.</p></div></li>
+          <li><span aria-hidden="true">▣</span><div><strong>Ваши устройства</strong><p>Добавляйте подключение по понятной инструкции.</p></div></li>
+          <li><span aria-hidden="true">↗</span><div><strong>Удобный выбор</strong><p>Пользуйтесь кабинетом или связанным Telegram-ботом.</p></div></li>
         </ul>
         <a className="text-link" href={CABINET_URL} target="_blank" rel="noreferrer">Открыть личный кабинет <span aria-hidden="true">↗</span></a>
       </div>
@@ -86,6 +84,8 @@ export default function Home() {
         <span className="cabinet-preview-chip cabinet-preview-chip-secure">Подписка · устройства · баланс</span>
       </a>
     </section>
+
+    <PartnerBanner />
 
     <section className="section-shell section-block" id="getting-started">
       <SectionHeading eyebrow="Начало работы" title="Три шага. И вы на связи." text="Без сложных настроек: от пробного доступа до первого подключения." />

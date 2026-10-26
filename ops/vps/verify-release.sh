@@ -15,7 +15,14 @@ done
 
 for path in /reviews /reviews/moderation /api/reviews; do
   retired_status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' --max-time 15 "${base_url}${path}")"
-  [[ "$retired_status" == "410" ]]
+  # Existing VPS installations can retain an authentication gate for this retired private route.
+  # Public review routes must still return 410; never accept an arbitrary authorization failure.
+  if [[ "$path" == "/reviews/moderation" && "$retired_status" == "401" ]]; then
+    curl --silent --show-error --head --max-time 15 "${base_url}${path}" |
+      grep -Eiq '^www-authenticate:[[:space:]]*Basic[[:space:]]'
+  else
+    [[ "$retired_status" == "410" ]]
+  fi
 done
 
 version_payload="$(curl --fail --silent --show-error --max-time 15 "${base_url}/api/version")"

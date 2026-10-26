@@ -54,6 +54,42 @@ test("current release page and update endpoint agree on the October release", as
   assert.ok(verificationScript.includes(`expected_release="${'${2:-'}${payload.release}}"`), "production smoke check must default to the current release");
 });
 
+test("production smoke check allows Basic Auth only on the retired private moderation page", async () => {
+  const script = await readFile(new URL("../ops/vps/verify-release.sh", import.meta.url), "utf8");
+  const mock = String.raw`
+curl() {
+  local url
+  for url; do :; done
+  if [[ "$*" == *--write-out* ]]; then
+    case "$url" in
+      */reviews/moderation) printf '%s' "$MOCK_MODERATION_STATUS" ;;
+      */reviews) printf '%s' "$MOCK_PUBLIC_STATUS" ;;
+      *) printf '410' ;;
+    esac
+  elif [[ "$*" == *--head* ]]; then
+    printf 'www-authenticate: %s realm="restricted"\r\n' "$MOCK_AUTH_SCHEME"
+    printf 'strict-transport-security: max-age=63072000\r\ncontent-security-policy: default-src self\r\nx-content-type-options: nosniff\r\nx-st-village-release: 1.4.0\r\nx-st-village-channel: stable\r\n'
+  elif [[ "$url" == */api/version ]]; then
+    printf '{"release":"1.4.0","channel":"stable"}'
+  else
+    printf 'https://stvillage.top/og-social-v2.png application/ld+json'
+  fi
+}
+`;
+  const bash = process.platform === "win32" ? "C:/Program Files/Git/bin/bash.exe" : "bash";
+  for (const [moderation, auth, publicStatus, success] of [
+    ["410", "Basic", "410", true], ["401", "Basic", "410", true],
+    ["401", "Bearer", "410", false], ["403", "Basic", "410", false],
+    ["200", "Basic", "410", false], ["401", "Basic", "401", false],
+  ]) {
+    const result = spawnSync(bash, ["-c", mock + script], { encoding: "utf8", env: {
+      ...process.env, MOCK_MODERATION_STATUS: moderation, MOCK_AUTH_SCHEME: auth, MOCK_PUBLIC_STATUS: publicStatus,
+    } });
+    assert.ifError(result.error);
+    assert.equal(result.status === 0, success, `${moderation}/${auth}/${publicStatus}: ${result.stderr}`);
+  }
+});
+
 async function signedBotRequest(path, options = {}) {
   const method = options.method ?? "GET";
   const body = options.body ?? "";

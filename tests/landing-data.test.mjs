@@ -16,6 +16,65 @@ test("resolved incidents do not degrade the current status", () => {
   assert.equal(live([{ title: "Исправлено", severity: "critical", status: "resolved" }]).status, "operational");
   assert.equal(live([]).status, "operational");
 });
+
+for (const value of [undefined, null, "", " \t ", false, true, [], [23], {}, "invalid", Infinity]) {
+  test(`missing or nonnumeric monitoring values remain unknown: ${typeof value === "number" ? String(value) : JSON.stringify(value)}`, () => {
+    const summary = normalizeLiveStatus({
+      totals: { uptime30: value, avgLatency: value },
+      servers: [{ sid: "de", uptime30: value, latencyMs: value }],
+    });
+    assert.equal(summary.totals.uptime30, null);
+    assert.equal(summary.totals.averageLatencyMs, null);
+    assert.equal(summary.servers[0].uptime30, null);
+    assert.equal(summary.servers[0].latencyMs, null);
+  });
+}
+
+test("monitoring normalization preserves numeric strings, zero and bounded ranges", () => {
+  const summary = normalizeLiveStatus({
+    totals: { online: "1", total: "2", maintenance: "0", uptime30: "0", avgLatency: "0" },
+    servers: [
+      { sid: "de", uptime30: "99.5", latencyMs: "82.5", members: "2", membersOnline: "1" },
+      { sid: "lte", uptime30: 0, latencyMs: 0 },
+      { sid: "high", uptime30: 200, latencyMs: 70_000 },
+      { sid: "low", uptime30: -1, latencyMs: -1 },
+    ],
+  });
+  assert.deepEqual(summary.totals, { online: 1, total: 2, maintenance: 0, uptime30: 0, averageLatencyMs: 0 });
+  assert.deepEqual(summary.servers.map(({ uptime30, latencyMs }) => ({ uptime30, latencyMs })), [
+    { uptime30: 99.5, latencyMs: 82.5 },
+    { uptime30: 0, latencyMs: null },
+    { uptime30: 100, latencyMs: 60_000 },
+    { uptime30: 0, latencyMs: null },
+  ]);
+  assert.equal(summary.servers[0].members, 2);
+  assert.equal(summary.servers[0].membersOnline, 1);
+});
+
+test("unknown totals still fall back to the normalized server count", () => {
+  const summary = normalizeLiveStatus({ servers: [{ sid: "de" }, { sid: "pl" }, {}] });
+  assert.equal(summary.totals.total, 2);
+  assert.equal(summary.totals.online, 0);
+  assert.equal(summary.status, "outage");
+});
+
+for (const value of [undefined, null, "", " \t ", false, true, [], [23], {}, "invalid", Infinity]) {
+  test(`missing or invalid monitoring timestamps do not become Unix epoch: ${typeof value === "number" ? String(value) : JSON.stringify(value)}`, () => {
+    const before = Date.now();
+    const summary = normalizeLiveStatus({ lastCheckTs: value, incidents: [{ title: "Проверка", startedTs: value }] });
+    const after = Date.now();
+    const generatedAt = Date.parse(summary.generatedAt);
+    assert.ok(generatedAt >= before && generatedAt <= after, summary.generatedAt);
+    assert.equal(summary.incidents[0].startedAt, null);
+  });
+}
+
+test("monitoring timestamps accept numeric strings and explicit Unix epoch", () => {
+  const summary = normalizeLiveStatus({ lastCheckTs: "86400", incidents: [{ title: "Проверка", startedTs: 0 }] });
+  assert.equal(summary.generatedAt, "1970-01-02T00:00:00.000Z");
+  assert.equal(summary.incidents[0].startedAt, "1970-01-01T00:00:00.000Z");
+});
+
 test("compact refresh keeps only two newest posts and uses new content for edits", () => {
   const posts = mergePosts([{ id: "3", html: "новое" }, { id: "2", html: "исправлено" }], [{ id: "2", html: "старое" }, { id: "1" }], 2);
   assert.deepEqual(posts.map((post) => post.id), ["3", "2"]);
@@ -35,6 +94,20 @@ test("real countries include Albania but automatic routes do not become Switzerl
   assert.equal(servers[1].countryCode, "");
   assert.equal(servers[2].name, "Германия");
   assert.equal(getNetworkCountries(servers)[1].total, 2);
+});
+
+test("decorated automatic routes never become Swiss locations or incident flags", () => {
+  const summary = normalizeLiveStatus({ servers: [
+    { sid: "auto", cc: "CH", name: "🎲Авто выбор🎲", online: true },
+    { sid: "lte", cc: "CH", name: "📡Авто LTE📡", online: true },
+    { sid: "short", cc: "CH", name: "Авто🎲", online: true },
+    { sid: "english", cc: "CH", name: "Auto-select", online: true },
+    { sid: "ee", cc: "EE", name: "Эстония VLESS", online: true },
+    { sid: "de", cc: "DE", name: "Германия (4G/5G/LTE) 📡", online: true },
+  ], incidents: [{ title: "Проверка маршрута", affected: [{ name: "🎲Авто выбор🎲", cc: "CH" }] }] });
+  assert.deepEqual(summary.servers.map((server) => server.countryCode), ["", "", "", "", "EE", "DE"]);
+  assert.deepEqual(getNetworkCountries(summary.servers).map((country) => country.code), ["DE", "EE"]);
+  assert.equal(summary.incidents[0].affected[0].countryCode, "");
 });
 
 test("expired, invalid and future snapshots must not appear current", () => {

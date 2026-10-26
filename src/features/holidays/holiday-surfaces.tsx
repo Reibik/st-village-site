@@ -5,7 +5,7 @@ import { HolidayBoundary } from "./holiday-boundary";
 
 function Surface({ surface }: { surface: "logo" | "hero" | "edges" }) {
   const { ready, enabled, active, scope, visible } = useHoliday();
-  if (!ready || !enabled || !active || scope === "none" || (surface !== "logo" && scope !== "home")) return null;
+  if (!ready || !enabled || !active || scope === "none" || (surface === "hero" && scope !== "home")) return null;
   return <HolidayBoundary resetKey={`${active.theme}:${surface}`}><HolidayScene theme={active.theme} surface={surface} paused={!visible} /></HolidayBoundary>;
 }
 export function HolidayLogoAccent() { return <Surface surface="logo" />; }

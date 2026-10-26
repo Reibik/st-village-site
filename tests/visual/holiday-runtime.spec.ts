@@ -104,12 +104,13 @@ test("renderer failure is contained while the page remains usable", async ({ pag
   await expect(page.locator(".hero-actions .button-primary")).toHaveAttribute("href", "https://cabinet.stvillage.top");
 });
 
-test("client navigation removes home effects without duplicating the shared logo", async ({ page }) => {
+test("client navigation preserves global effects without duplicating the shared logo", async ({ page }) => {
   await prepareHoliday(page); await page.goto("/");
   await expect(page.locator('[data-holiday-surface="hero"]')).toHaveCount(1);
   await page.locator('.site-footer a[href="/status"]').click();
   await expect(page).toHaveURL("/status");
-  await expect(page.locator('[data-holiday-surface="hero"], [data-holiday-surface="edges"]')).toHaveCount(0);
+  await expect(page.locator('[data-holiday-surface="hero"]')).toHaveCount(0);
+  await expect(page.locator('[data-holiday-surface="edges"]')).toHaveCount(1);
   await expect(page.locator('[data-holiday-surface="logo"]')).toHaveCount(1);
   await page.getByRole("link", { name: "ST VILLAGE — главная", exact: true }).click();
   await expect(page.locator('[data-holiday-surface="hero"]')).toHaveCount(1);

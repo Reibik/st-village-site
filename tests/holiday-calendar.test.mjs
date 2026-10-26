@@ -40,7 +40,8 @@ test("preference defaults and service route exclusions", () => {
   for (const raw of [null,"on","invalid"]) assert.equal(parseHolidayPreference(raw),true);
   assert.equal(parseHolidayPreference("off"),false);
   for (const path of ["/status/management", "/status/management/", "/status/management/log", "/preview/holidays"]) assert.equal(getHolidayScope(path),"none");
-  assert.equal(getHolidayScope("/"),"home"); assert.equal(getHolidayScope("/news"),"logo");
+  assert.equal(getHolidayScope("/"),"home");
+  for (const path of ["/news", "/status", "/pricing", "/connect", "/support", "/release", "/legal/privacy", "/legal/terms", "/login", "/coupons"]) assert.equal(getHolidayScope(path),"page");
 });
 test("preview trusts configuration only and rejects lookalike origins", () => {
   assert.equal(canPreviewHolidays("development","https://stvillage.top"),true);

@@ -16,6 +16,7 @@ function cleanText(value: unknown, fallback = "", maxLength = 160) {
 }
 
 function finiteNumber(value: unknown, minimum = 0, maximum = Number.MAX_SAFE_INTEGER): number | null {
+  if (typeof value !== "number" && (typeof value !== "string" || value.trim() === "")) return null;
   const parsed = typeof value === "number" ? value : Number(value);
   return Number.isFinite(parsed) ? Math.min(maximum, Math.max(minimum, parsed)) : null;
 }

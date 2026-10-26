@@ -15,7 +15,7 @@ async function prepare(page: Page) {
       ],
     }],
   } }));
-  await page.route("**/api/version**", (route) => route.fulfill({ json: { version: "1.3.0", updateAvailable: false } }));
+  await page.route("**/api/version**", (route) => route.fulfill({ json: { version: "1.4.0", updateAvailable: false } }));
 }
 
 test("стеклянные поверхности не размывают текст и не перехватывают кнопки в обеих темах", async ({ page }) => {

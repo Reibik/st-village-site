@@ -2,6 +2,7 @@ const countryLabels: Record<string, string> = {
   AL: "Албания",
   CH: "Швейцария",
   DE: "Германия",
+  EE: "Эстония",
   FI: "Финляндия",
   FR: "Франция",
   NL: "Нидерланды",

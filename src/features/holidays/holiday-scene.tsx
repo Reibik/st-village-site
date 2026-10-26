@@ -14,13 +14,12 @@ function Symbol({ kind }: { kind: "snow" | "star" | "pumpkin" | "satellite" }) {
 const heroPoints = [[77, 17], [13, 30], [83, 54], [25, 13], [52, 8], [7, 59]] as const;
 
 export function HolidayScene({ theme, surface, paused }: { theme: HolidayTheme; surface: "logo" | "hero" | "edges"; paused: boolean }) {
-  if (surface === "edges" && theme === "space") return null;
   if (surface !== "logo") {
     const count = surface === "hero" ? 6 : 12;
     return <div className={`holiday-scene holiday-${theme} holiday-${surface}`} data-holiday-theme={theme} data-holiday-surface={surface} data-paused={paused} aria-hidden="true">
       {surface === "hero" && <span className="holiday-halo" />}
       {Array.from({ length: count }, (_, index) => {
-        const kind = theme === "winter" ? "snow" : theme === "space" ? (index === 0 ? "satellite" : "star") : index % 3 === 0 ? "pumpkin" : "star";
+        const kind = theme === "winter" ? "snow" : theme === "space" ? (surface === "hero" && index === 0 ? "satellite" : "star") : index % 3 === 0 ? "pumpkin" : "star";
         const point = surface === "hero" ? heroPoints[index] : null;
         const style = { "--holiday-x": `${point?.[0] ?? 0}%`, "--holiday-y": `${point?.[1] ?? 8 + Math.floor(index / 2) * 14}%`, "--holiday-delay": `${-index * 1.7}s`, "--holiday-duration": `${14 + index % 4 * 3}s` } as CSSProperties;
         return <span key={index} className={`holiday-particle holiday-symbol-${kind} ${index < (surface === "hero" ? 4 : 2) ? "holiday-mobile" : ""} ${index % 2 ? "holiday-right" : "holiday-left"}`} style={style} data-holiday-particle="" ><Symbol kind={kind} /></span>;

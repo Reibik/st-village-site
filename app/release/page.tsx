@@ -8,34 +8,38 @@ import { createPageMetadata } from "@/src/config/seo";
 
 export const metadata: Metadata = createPageMetadata({
   title: `Релиз v${SITE_RELEASE.version}`,
-  description: "ST VILLAGE v1.3.0 «Фирменная орбита» — новая главная, удобное подключение, улучшенные новости и достоверный мониторинг.",
+  description: `ST VILLAGE v${SITE_RELEASE.version} — праздничное оформление всех публичных страниц, обновлённая главная, флаг Эстонии и исправления мониторинга.`,
   path: "/release",
 });
 
 const releaseHighlights = [
   {
     index: "01",
-    title: "Фирменная орбита",
-    text: "Новый первый экран с мягкой анимацией, заметным пробным доступом и понятным переходом в личный кабинет.",
+    title: "Праздник на каждой странице",
+    text: "Сезонные орбиты появляются автоматически по московскому календарю. Общее оформление можно выключить в подвале сайта.",
   },
   {
     index: "02",
-    title: "Информация без лишнего",
-    text: "Три шага подключения, два анонса новостей и мониторинг, который честно показывает инциденты и устаревшие данные.",
+    title: "Выразительнее и удобнее",
+    text: "Пробный доступ стал заметнее, подписи — крупнее, а эффекты стекла — спокойнее. Главная сохраняет фирменную орбиту и быстрый переход в кабинет.",
   },
   {
     index: "03",
-    title: "Качество каждого обновления",
-    text: "Сборка, безопасность, внешние ссылки и внешний вид на компьютере и телефоне проверяются автоматически до публикации.",
+    title: "Мониторинг без ложных цифр",
+    text: "Добавлен флаг Эстонии. Неизвестные показатели и даты больше не отображаются как нулевой аптайм или начало 1970 года.",
   },
 ] as const;
+
+const releaseDate = new Intl.DateTimeFormat("ru-RU", {
+  day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Moscow",
+}).format(new Date(SITE_RELEASE.releasedAt));
 
 export default function ReleasePage() {
   return <>
     <PageHero
       eyebrow={`Стабильный канал · v${SITE_RELEASE.version}`}
-      title="Фирменная орбита — новый облик ST VILLAGE"
-      text="Версия 1.3.0 делает главную выразительнее и удобнее: от пробного доступа и подключения до новостей, мониторинга и поддержки."
+      title="Фирменная орбита — праздничное обновление"
+      text={`Версия ${SITE_RELEASE.version}: праздничное оформление всех публичных страниц, более читаемая главная и точные данные мониторинга.`}
     />
 
     <section className="section-shell page-content release-page" aria-labelledby="release-highlights-title">
@@ -43,7 +47,7 @@ export default function ReleasePage() {
         <div>
           <div className="eyebrow">{SITE_RELEASE.name}</div>
           <h2 id="release-highlights-title">{SITE_RELEASE.name}</h2>
-          <p>Выпущен <time dateTime={SITE_RELEASE.releasedAt}>3 октября 2026 года</time>. Новый дизайн, улучшенные новости и мониторинг уже доступны. Раздел купонов пока закрыт и отмечен бейджем «Скоро».</p>
+          <p>Выпущен <time dateTime={SITE_RELEASE.releasedAt}>{releaseDate}</time>. Праздничные орбиты, улучшения главной и исправления мониторинга доступны на сайте. Купоны пока закрыты и отмечены бейджем «Скоро».</p>
         </div>
         <span className="release-badge" aria-label={`Версия ${SITE_RELEASE.version}`}>v{SITE_RELEASE.version}</span>
       </div>

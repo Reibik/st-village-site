@@ -3,5 +3,6 @@ export function cleanServerName(name) {
 }
 
 export function isAutomaticRoute(name) {
-  return /(?:^|\s)(?:авто(?:\s|$)|автоматическ|auto(?:\s|$))/iu.test(cleanServerName(name));
+  // Upstream labels can wrap route names in emoji or punctuation, not just spaces.
+  return /(?:^|[^\p{L}\p{N}_])(?:авто(?:[^\p{L}\p{N}_]|$)|автоматическ|auto(?:[^\p{L}\p{N}_]|$))/iu.test(cleanServerName(name));
 }

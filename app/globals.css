@@ -206,6 +206,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .flag-placeholder { width: 42px; height: 29px; display: grid; place-items: center; border-radius: 8px; background: var(--surface-raised); border: 1px solid var(--line); color: var(--muted); font: 700 9px ui-monospace,monospace; }
 .country-flag { position: relative; flex: 0 0 auto; overflow: hidden; border-color: rgba(148,163,184,.34); background: #fff; box-shadow: 0 5px 14px rgba(0,0,0,.18); }
 .flag-de { background: linear-gradient(to bottom,#000 0 33.333%,#dd0000 33.333% 66.666%,#ffce00 66.666% 100%); }
+.flag-ee { background: linear-gradient(to bottom,#0072ce 0 33.333%,#000 33.333% 66.666%,#fff 66.666% 100%); }
 .flag-al { background: #f00 url('/flags/al.svg') center / cover no-repeat; }
 .telegram-post-card { scroll-margin-top: 94px; }
 .flag-ch { background: #d52b1e; }.flag-ch::before,.flag-ch::after { content: ""; position: absolute; z-index: 1; background: #fff; }.flag-ch::before { width: 34%; height: 18%; left: 33%; top: 41%; }.flag-ch::after { width: 12%; height: 50%; left: 44%; top: 25%; }

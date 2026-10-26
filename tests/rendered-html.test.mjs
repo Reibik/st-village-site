@@ -37,6 +37,23 @@ test("server rendering never emits seasonal decoration before the preference is 
   assert.doesNotMatch(await sitemap.text(), /preview\/holidays/);
 });
 
+test("current release page and update endpoint agree on the October release", async () => {
+  const response = await worker.fetch(new Request("http://localhost/release"), env, context);
+  const html = await response.text();
+  assert.equal(response.status, 200);
+  assert.match(html, /Релиз v1\.4\.0/);
+  assert.match(html, /Праздник на каждой странице/);
+  assert.match(html, /Эстонии/);
+  assert.match(html, /dateTime="2026-10-26T00:00:00\.000Z"/);
+  assert.doesNotMatch(html, /Версия 1\.3\.0 делает|ST VILLAGE v1\.3\.0 «Фирменная орбита» — новая главная/);
+  const version = await worker.fetch(new Request("http://localhost/api/version?current=1.3.0"), env, context);
+  const payload = await version.json();
+  assert.equal(payload.release, "1.4.0");
+  assert.equal(payload.updateAvailable, true);
+  const verificationScript = await readFile(new URL("../ops/vps/verify-release.sh", import.meta.url), "utf8");
+  assert.ok(verificationScript.includes(`expected_release="${'${2:-'}${payload.release}}"`), "production smoke check must default to the current release");
+});
+
 async function signedBotRequest(path, options = {}) {
   const method = options.method ?? "GET";
   const body = options.body ?? "";
@@ -55,7 +72,7 @@ test("server-renders the ST VILLAGE public home page", async () => {
   const response = await worker.fetch(new Request("http://localhost/", { headers: { accept: "text/html" } }), env, context);
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
-  assert.equal(response.headers.get("x-st-village-release"), "1.3.0");
+  assert.equal(response.headers.get("x-st-village-release"), "1.4.0");
   assert.equal(response.headers.get("x-st-village-channel"), "stable");
 
   const html = await response.text();
@@ -65,7 +82,7 @@ test("server-renders the ST VILLAGE public home page", async () => {
   assert.match(html, /Открыть личный кабинет/);
   assert.match(html, /https:\/\/cabinet\.stvillage\.top/);
   assert.match(html, /https:\/\/t\.me\/st_village_vpn_bot/);
-  assert.match(html, /class="footer-version"[^>]*>v(?:<!-- -->)?1\.3\.0<\/a>/);
+  assert.match(html, /class="footer-version"[^>]*>v(?:<!-- -->)?1\.4\.0<\/a>/);
   assert.match(html, /href="\/release"/);
   assert.match(html, /Попробовать 1 день/);
   assert.match(html, /5 ГБ/);
@@ -104,7 +121,7 @@ test("all public pages render their expected content", async () => {
     ["/status", "Состояние инфраструктуры"],
     ["/news", "Новости ST VILLAGE"],
     ["/support", "Помощь, когда она нужна"],
-    ["/release", "Фирменная орбита — новый облик ST VILLAGE"],
+    ["/release", "Фирменная орбита — праздничное обновление"],
     ["/legal/privacy", "Политика конфиденциальности 🚀ST VILLAGE🚀"],
     ["/legal/terms", "Публичная оферта сервиса 🚀ST VILLAGE🚀"],
   ];
@@ -169,7 +186,7 @@ test("website bot summary no longer reads or exposes a review queue", async () =
   assert.equal(response.status, 200);
   const payload = await response.json();
   assert.equal(Object.hasOwn(payload, "reviews"), false);
-  assert.equal(payload.release.version, "1.3.0");
+  assert.equal(payload.release.version, "1.4.0");
 });
 
 test("retired review records survive normal writes and scheduled archive cleanup", async () => {
@@ -287,7 +304,7 @@ test("version endpoint detects a newer deployment without being cached", async (
   const currentPayload = await current.json();
   assert.equal(typeof currentPayload.version, "string");
   assert.equal(currentPayload.version.length > 0, true);
-  assert.equal(currentPayload.release, "1.3.0");
+  assert.equal(currentPayload.release, "1.4.0");
   assert.equal(currentPayload.channel, "stable");
   assert.equal(currentPayload.releaseName, "Фирменная орбита");
   assert.equal(currentPayload.updateAvailable, false);
@@ -868,7 +885,7 @@ test("accessibility and performance safeguards cover the new public surfaces", a
   assert.match(packageJson.scripts["release:check"], /test:performance/);
 });
 
-test("v1.3.0 operational release safeguards are present", async () => {
+test("v1.4.0 operational release safeguards are present", async () => {
   const packageJson = JSON.parse(await readFile(new URL("../package.json", import.meta.url), "utf8"));
   const workflow = await readFile(new URL("../.github/workflows/quality.yml", import.meta.url), "utf8");
   const caddy = await readFile(new URL("../ops/vps/Caddyfile", import.meta.url), "utf8");
@@ -879,7 +896,7 @@ test("v1.3.0 operational release safeguards are present", async () => {
   const releasePage = await readFile(new URL("../app/release/page.tsx", import.meta.url), "utf8");
   const worker = await readFile(new URL("../worker/index.ts", import.meta.url), "utf8");
 
-  assert.equal(packageJson.version, "1.3.0");
+  assert.equal(packageJson.version, "1.4.0");
   assert.match(packageJson.scripts.typecheck, /tsc --noEmit/);
   assert.match(packageJson.scripts["release:check"], /lint.*typecheck.*test:performance.*pnpm test/s);
   assert.match(packageJson.scripts.test, /build.*rendered-html.*landing-data.*telegram-link/s);
@@ -895,7 +912,7 @@ test("v1.3.0 operational release safeguards are present", async () => {
   assert.match(security, /Canonical: https:\/\/stvillage\.top\/\.well-known\/security\.txt/);
   assert.match(releaseConfig, /channel: "stable"/);
   assert.match(releaseConfig, /name: "Фирменная орбита"/);
-  assert.match(releasePage, /Фирменная орбита — новый облик ST VILLAGE/);
+  assert.match(releasePage, /Фирменная орбита — праздничное обновление/);
   assert.match(worker, /X-ST-Village-Release/);
   assert.match(worker, /X-ST-Village-Channel/);
   assert.match(changelog, /1\.0\.0 — стабильный запуск/);

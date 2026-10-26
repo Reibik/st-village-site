@@ -7,7 +7,7 @@ import { getHolidayScope, HOLIDAY_PREFERENCE_KEY, parseHolidayPreference } from 
 
 type HolidayState = {
   ready: boolean; enabled: boolean; active: HolidayRule | null;
-  scope: "home" | "logo" | "none"; visible: boolean; toggle: () => void;
+  scope: "home" | "page" | "none"; visible: boolean; toggle: () => void;
 };
 const HolidayContext = createContext<HolidayState | null>(null);
 
